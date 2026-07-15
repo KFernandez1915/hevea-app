@@ -1,0 +1,75 @@
+<%- include('../partials/head', { titre: 'Mon espace' }) %>
+<%- include('../partials/nav-planteur') %>
+<div class="container">
+  <h1>Bonjour <%= planteur.prenoms %> <%= planteur.nom %></h1>
+  <p class="muted">Mois en cours : <%= formaterPeriode(periode) %></p>
+
+  <% if (typeof erreur !== 'undefined' && erreur === 'mdp') { %>
+    <div class="alert error">Mot de passe actuel incorrect.</div>
+  <% } %>
+  <% if (typeof message !== 'undefined' && message === 'mdp_modifie') { %>
+    <div class="alert info">Mot de passe modifie avec succes.</div>
+  <% } %>
+
+  <div class="grid-stats">
+    <div class="stat">
+      <div class="label">Prix du kg ce mois</div>
+      <div class="value"><%= recap.prixKg ? formaterMontant(recap.prixKg) : 'Non defini' %></div>
+    </div>
+    <div class="stat">
+      <div class="label">Poids total livre</div>
+      <div class="value"><%= recap.poidsTotal.toFixed(1) %> kg</div>
+    </div>
+    <div class="stat">
+      <div class="label">Montant a percevoir</div>
+      <div class="value"><%= formaterMontant(recap.montant) %></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Mes pesees du mois (<%= recap.nbPesees %>)</h2>
+    <% if (recap.pesees.length === 0) { %>
+      <p class="muted">Aucune pesee enregistree pour ce mois pour le moment.</p>
+    <% } else { %>
+      <table>
+        <thead><tr><th>Date</th><th>Poids (kg)</th></tr></thead>
+        <tbody>
+          <% recap.pesees.forEach(function(pz) { %>
+            <tr><td><%= pz.date_pesee %></td><td><%= pz.poids_kg %></td></tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h2>Mes informations de paiement</h2>
+    <table>
+      <tr><td>Moyen de paiement</td><td><%= planteur.moyen_paiement || 'Non renseigne' %></td></tr>
+      <tr><td>Contact de paiement</td><td><%= planteur.contact_paiement || 'Non renseigne' %></td></tr>
+    </table>
+    <p class="muted" style="margin-top:8px;">Pour modifier ces informations, contactez l'administrateur.</p>
+  </div>
+
+  <div class="card">
+    <h2>Changer mon mot de passe</h2>
+    <% if (planteur.mot_de_passe_temporaire) { %>
+      <div class="alert error">Vous utilisez encore le mot de passe temporaire recu par SMS. Merci de le modifier.</div>
+    <% } %>
+    <form method="POST" action="/planteur/mot-de-passe">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Mot de passe actuel</label>
+          <input type="password" name="mot_de_passe_actuel" required>
+        </div>
+        <div class="form-group">
+          <label>Nouveau mot de passe</label>
+          <input type="password" name="nouveau_mot_de_passe" required minlength="6">
+        </div>
+      </div>
+      <button class="btn green" type="submit">Modifier le mot de passe</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

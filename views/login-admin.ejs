@@ -1,0 +1,22 @@
+<%- include('partials/head', { titre: 'Connexion Administrateur' }) %>
+<div class="login-wrap">
+  <h1>Connexion Admin</h1>
+  <p class="subtitle">Espace de gestion des planteurs</p>
+  <% if (erreur) { %>
+    <div class="alert error"><%= erreur %></div>
+  <% } %>
+  <form method="POST" action="/admin/connexion">
+    <div class="form-group">
+      <label>Identifiant</label>
+      <input type="text" name="identifiant" required autofocus>
+    </div>
+    <div class="form-group">
+      <label>Mot de passe</label>
+      <input type="password" name="mot_de_passe" required>
+    </div>
+    <button class="btn green" style="width:100%;" type="submit">Se connecter</button>
+  </form>
+  <p class="muted" style="text-align:center; margin-top:16px;"><a href="/planteur/connexion">Je suis planteur →</a></p>
+</div>
+</body>
+</html>

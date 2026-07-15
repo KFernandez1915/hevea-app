@@ -1,0 +1,13 @@
+<div class="topbar">
+  <div class="brand">🌳 Gestion Planteurs Hevea — Admin</div>
+  <nav>
+    <a href="/admin">Tableau de bord</a>
+    <a href="/admin/planteurs">Planteurs</a>
+    <a href="/admin/mois">Saisie mensuelle</a>
+    <a href="/admin/recap">Recapitulatif</a>
+    <a href="/admin/historique">Historique</a>
+    <form class="inline" method="POST" action="/admin/deconnexion">
+      <a href="#" onclick="this.closest('form').submit(); return false;">Deconnexion (<%= adminNom %>)</a>
+    </form>
+  </nav>
+</div>

@@ -1,0 +1,24 @@
+<%- include('../partials/head', { titre: 'Historique' }) %>
+<%- include('../partials/nav-admin') %>
+<div class="container">
+  <h1>Historique des mois</h1>
+  <div class="card">
+    <% if (periodes.length === 0) { %>
+      <p class="muted">Aucun mois enregistre pour le moment.</p>
+    <% } else { %>
+      <table>
+        <thead><tr><th>Mois</th><th></th></tr></thead>
+        <tbody>
+          <% periodes.forEach(function(periode) { %>
+            <tr>
+              <td><%= formaterPeriode(periode) %></td>
+              <td><a class="btn small" href="/admin/recap?periode=<%= periode %>">Voir le recapitulatif</a></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<%- include('../partials/head', { titre: planteur ? 'Modifier un planteur' : 'Nouveau planteur' }) %>
+<%- include('../partials/nav-admin') %>
+<div class="container">
+  <h1><%= planteur ? 'Modifier le planteur' : 'Nouveau planteur' %></h1>
+
+  <% if (erreur) { %>
+    <div class="alert error"><%= erreur %></div>
+  <% } %>
+
+  <div class="card">
+    <form method="POST" action="<%= planteur ? '/admin/planteurs/' + planteur.id : '/admin/planteurs' %>">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nom</label>
+          <input type="text" name="nom" required value="<%= planteur ? planteur.nom : '' %>">
+        </div>
+        <div class="form-group">
+          <label>Prenoms</label>
+          <input type="text" name="prenoms" required value="<%= planteur ? planteur.prenoms : '' %>">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Contact (telephone)</label>
+        <input type="text" name="contact" value="<%= planteur ? (planteur.contact || '') : '' %>" placeholder="Ex: 07 00 00 00 00">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Contact de paiement</label>
+          <input type="text" name="contact_paiement" value="<%= planteur ? (planteur.contact_paiement || '') : '' %>" placeholder="Numero sur lequel payer le planteur">
+        </div>
+        <div class="form-group">
+          <label>Moyen de paiement</label>
+          <select name="moyen_paiement">
+            <option value="">-- Choisir --</option>
+            <% ['Orange Money', 'Wave', 'MTN Money', 'Virement', 'Virement', 'Espèce', 'Moov Money'].forEach(function(m) { %>
+              <option value="<%= m %>" <%= (planteur && planteur.moyen_paiement === m) ? 'selected' : '' %>><%= m %></option>
+            <% }); %>
+          </select>
+        </div>
+      </div>
+
+      <% if (planteur) { %>
+        <div class="form-group">
+          <label>Statut</label>
+          <select name="statut">
+            <option value="actif" <%= planteur.statut === 'actif' ? 'selected' : '' %>>Actif</option>
+            <option value="inactif" <%= planteur.statut === 'inactif' ? 'selected' : '' %>>Inactif</option>
+          </select>
+        </div>
+      <% } else { %>
+        <p class="muted">Un identifiant et un mot de passe temporaire seront generes automatiquement et envoyes par SMS au contact renseigne.</p>
+      <% } %>
+
+      <button class="btn green" type="submit"><%= planteur ? 'Enregistrer' : 'Creer le planteur' %></button>
+      <a class="btn grey" href="/admin/planteurs">Annuler</a>
+    </form>
+  </div>
+</div>
+</body>
+</html>

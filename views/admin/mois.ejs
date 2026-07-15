@@ -1,0 +1,86 @@
+<%- include('../partials/head', { titre: 'Saisie mensuelle' }) %>
+<%- include('../partials/nav-admin') %>
+<div class="container">
+  <h1>Saisie mensuelle — <%= formaterPeriode(periode) %></h1>
+
+  <% if (message) { %>
+    <div class="alert info"><%= message %></div>
+  <% } %>
+
+  <form method="GET" action="/admin/mois" style="margin-bottom:18px;">
+    <div class="form-group" style="max-width:220px;">
+      <label>Mois</label>
+      <input type="month" name="periode" value="<%= periode %>" onchange="this.form.submit()">
+    </div>
+  </form>
+
+  <div class="card">
+    <h2>1. Prix du kg du mois</h2>
+    <p class="muted">Prix unique fixe par l'Etat, applique a tous les planteurs pour ce mois.</p>
+    <form method="POST" action="/admin/mois/prix" style="display:flex; gap:10px; align-items:end;">
+      <input type="hidden" name="periode" value="<%= periode %>">
+      <div class="form-group" style="max-width:200px;">
+        <label>Prix du kg (FCFA)</label>
+        <input type="number" step="0.01" name="prix_kg" value="<%= prixKg %>" required>
+      </div>
+      <button class="btn green" type="submit">Enregistrer le prix</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>2. Enregistrer une pesee</h2>
+    <p class="muted">Un planteur peut etre pese plusieurs fois dans le mois : les poids seront cumules automatiquement.</p>
+    <form method="POST" action="/admin/mois/pesee">
+      <input type="hidden" name="periode" value="<%= periode %>">
+      <div class="form-row">
+        <div class="form-group" style="flex:2;">
+          <label>Planteur</label>
+          <select name="planteur_id" required>
+            <option value="">-- Choisir un planteur --</option>
+            <% planteurs.forEach(function(p) { %>
+              <option value="<%= p.id %>"><%= p.prenoms %> <%= p.nom %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date de pesee</label>
+          <input type="date" name="date_pesee" value="<%= new Date().toISOString().slice(0,10) %>" required>
+        </div>
+        <div class="form-group">
+          <label>Poids (kg)</label>
+          <input type="number" step="0.1" min="0.1" name="poids_kg" required>
+        </div>
+      </div>
+      <button class="btn green" type="submit">Ajouter la pesee</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Pesees du mois (<%= pesees.length %>)</h2>
+    <% if (pesees.length === 0) { %>
+      <p class="muted">Aucune pesee enregistree pour ce mois.</p>
+    <% } else { %>
+      <table>
+        <thead><tr><th>Planteur</th><th>Date</th><th>Poids (kg)</th><th></th></tr></thead>
+        <tbody>
+          <% pesees.forEach(function(pz) { %>
+            <tr>
+              <td><%= pz.nom_complet %></td>
+              <td><%= pz.date_pesee %></td>
+              <td><%= pz.poids_kg %></td>
+              <td>
+                <form class="inline" method="POST" action="/admin/pesees/<%= pz.id %>/supprimer" onsubmit="return confirm('Supprimer cette pesee ?');">
+                  <button class="btn small red" type="submit">Supprimer</button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <p><a class="btn" href="/admin/recap?periode=<%= periode %>">Voir le recapitulatif de ce mois →</a></p>
+</div>
+</body>
+</html>
