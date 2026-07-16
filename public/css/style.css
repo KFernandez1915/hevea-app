@@ -28,7 +28,26 @@ a { color: var(--navy); }
   justify-content: space-between;
 }
 
-.topbar .brand { font-weight: 700; font-size: 18px; }
+.topbar .brand { 
+  font-weight: 700; 
+  font-size: 18px; 
+}
+
+/* --- Style spécifique pour le Logo --- */
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.app-logo {
+  height: 32px; /* Ajuste la hauteur de ton logo ici */
+  width: auto;
+  object-fit: contain;
+}
+
 .topbar nav a {
   color: #fff;
   text-decoration: none;
@@ -150,3 +169,67 @@ form.inline { display: inline; }
 .export-links a { margin-right: 10px; }
 
 .muted { color: var(--grey); font-size: 13px; }
+
+/* Style de base pour la navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--navy);
+  padding: 12px 20px;
+  color: white;
+  position: relative;
+  z-index: 1000;
+}
+
+.burger-btn {
+  display: none; /* Caché sur PC */
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.nav-links {
+  display: flex;
+  gap: 15px;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+}
+
+/* --- ADAPTATION MOBILE --- */
+@media (max-width: 768px) {
+  .burger-btn {
+    display: block; /* Visible sur mobile */
+  }
+
+  .nav-links {
+    display: none; /* Masqué par défaut sur mobile */
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: var(--navy);
+    padding: 15px 20px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Affiché quand on clique sur le bouton burger */
+  .nav-links.open {
+    display: flex;
+  }
+
+  .nav-links a {
+    padding: 12px 0;
+    margin-left: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 15px;
+  }
+}
