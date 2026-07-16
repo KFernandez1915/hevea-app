@@ -232,4 +232,32 @@ form.inline { display: inline; }
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     font-size: 15px;
   }
+}/* Empêche le débordement horizontal */
+body, html {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Rendre le tableau défilable proprement s'il est trop large */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Force les images et conteneurs à ne pas dépasser l'écran */
+.container, table {
+  max-width: 100%;
+}/* Boutons en pleine largeur sur mobile */
+.card p {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card .btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin: 0 !important;
 }
