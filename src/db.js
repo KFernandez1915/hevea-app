@@ -1,41 +1,67 @@
-const fs = require('fs');
 const path = require('path');
+const fs = require('fs');
 const { DatabaseSync } = require('node:sqlite');
+const bcrypt = require('bcryptjs');
 
-// 1. Définition du chemin et création de la connexion SQLite
-const dbPath = path.resolve(__dirname, '../hevea.db');
-const db = new DatabaseSync(dbPath);
+const DATA_DIR = path.join(__dirname, '..', 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-// 2. Fonction d'importation automatique des données initiales
-function autoImportInitialData() {
-  try {
-    // Vérifier si la table planteurs existe
-    const checkTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='planteurs'").get();
+const db = new DatabaseSync(path.join(DATA_DIR, 'hevea.db'));
+db.exec('PRAGMA journal_mode = WAL');
+db.exec('PRAGMA foreign_keys = ON');
 
-    if (checkTable) {
-      const row = db.prepare("SELECT COUNT(*) as count FROM planteurs").get();
+db.exec(`
+CREATE TABLE IF NOT EXISTS admins (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nom TEXT NOT NULL,
+  identifiant TEXT UNIQUE NOT NULL,
+  mot_de_passe_hash TEXT NOT NULL,
+  cree_le TEXT DEFAULT (datetime('now'))
+);
 
-      if (row && row.count === 0) {
-        console.log("⚠️ Base de données vide sur Render. Importation des données initiales...");
+CREATE TABLE IF NOT EXISTS planteurs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nom TEXT NOT NULL,
+  prenoms TEXT NOT NULL,
+  contact TEXT,
+  contact_paiement TEXT,
+  moyen_paiement TEXT,
+  identifiant TEXT UNIQUE NOT NULL,
+  mot_de_passe_hash TEXT NOT NULL,
+  mot_de_passe_temporaire INTEGER DEFAULT 1,
+  statut TEXT NOT NULL DEFAULT 'actif' CHECK (statut IN ('actif','inactif')),
+  cree_le TEXT DEFAULT (datetime('now'))
+);
 
-        const sqlPath = path.resolve(__dirname, '../public/js/initial-data.sql');
+CREATE TABLE IF NOT EXISTS prix_mois (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  periode TEXT UNIQUE NOT NULL,          -- format 'YYYY-MM'
+  prix_kg REAL NOT NULL,
+  defini_le TEXT DEFAULT (datetime('now'))
+);
 
-        if (fs.existsSync(sqlPath)) {
-          const sqlScript = fs.readFileSync(sqlPath, 'utf8');
-          db.exec(sqlScript);
-          console.log("✅ Données initiales importées avec succès sur Render !");
-        } else {
-          console.log("⚠️ Fichier initial-data.sql introuvable à l'emplacement :", sqlPath);
-        }
-      }
-    }
-  } catch (err) {
-    console.error("❌ Erreur lors de l'auto-importation :", err.message);
-  }
+CREATE TABLE IF NOT EXISTS pesees (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  planteur_id INTEGER NOT NULL REFERENCES planteurs(id) ON DELETE CASCADE,
+  periode TEXT NOT NULL,                 -- format 'YYYY-MM', mois de rattachement
+  date_pesee TEXT NOT NULL,              -- date exacte du passage
+  poids_kg REAL NOT NULL CHECK (poids_kg > 0),
+  cree_le TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_pesees_periode ON pesees(periode);
+CREATE INDEX IF NOT EXISTS idx_pesees_planteur ON pesees(planteur_id);
+`);
+
+// Compte admin par defaut si aucun n'existe (identifiants a changer immediatement)
+const adminCount = db.prepare('SELECT COUNT(*) AS n FROM admins').get().n;
+if (adminCount === 0) {
+  const defaultUser = process.env.ADMIN_DEFAULT_USER || 'admin';
+  const defaultPass = process.env.ADMIN_DEFAULT_PASSWORD || 'ChangerCeMotDePasse123';
+  const hash = bcrypt.hashSync(defaultPass, 10);
+  db.prepare('INSERT INTO admins (nom, identifiant, mot_de_passe_hash) VALUES (?, ?, ?)')
+    .run('Administrateur', defaultUser, hash);
+  console.log(`[hevea-app] Compte admin initial cree -> identifiant: "${defaultUser}" / mot de passe: "${defaultPass}" (a changer)`);
 }
 
-// 3. Exécution de l'importation automatique
-autoImportInitialData();
-
-// 4. Exporter la base de données pour le reste de l'application
 module.exports = db;
