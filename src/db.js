@@ -1,16 +1,24 @@
 const fs = require('fs');
 const path = require('path');
 
-// 1. Initialisation / Connexion à la base SQLite
-// (Conserve ta ligne exacte de connexion SQLite ici, par exemple avec better-sqlite3 ou sqlite3)
-// EXEMPLE : const Database = require('better-sqlite3');
-// EXEMPLE : const db = new Database(path.join(__dirname, '../data/hevea.db'));
+// =========================================================
+// 1. DÉCLARATION ET INITIALISATION DE DB (GARDE TON CODE EXISTANT ICI)
+// =========================================================
+// Exemple si tu utilises node:sqlite ou better-sqlite3 :
+// const Database = require('better-sqlite3');
+// const db = new Database(path.join(__dirname, '../hevea.db'));
 
+// (Assure-toi que la variable 'db' ou 'database' est bien créée au-dessus de cette ligne)
+
+
+// =========================================================
+// 2. FONCTION D'IMPORT AUTOMATIQUE SÉCURISÉE
+// =========================================================
 function autoImportInitialData() {
   try {
-    // Vérification que l'objet db existe bel et bien
-    if (typeof db === 'undefined' || !db) {
-      console.log("⚠️ La connexion 'db' n'est pas encore prête.");
+    // Si 'db' porte un autre nom (ex: 'database' ou 'sqlite'), remplace 'db' ci-dessous :
+    if (typeof db === 'undefined') {
+      console.log("⚠️ Objet db non trouvé, saut de l'auto-import.");
       return;
     }
 
@@ -37,17 +45,17 @@ function autoImportInitialData() {
             }
           }
           console.log("✅ Données importées avec succès sur Render !");
-        } else {
-          console.log("⚠️ Fichier initial-data.sql introuvable au chemin :", sqlPath);
         }
       }
     }
   } catch (err) {
+    // Capturer l'erreur sans faire planter l'application (status 1)
     console.error("❌ Erreur lors de l'auto-importation :", err.message);
   }
 }
 
-// 2. Exécution de l'import APRES l'initialisation de 'db'
+// 3. Appel de la fonction APRES la création de 'db'
 autoImportInitialData();
 
+// 4. Export de la base
 module.exports = db;
