@@ -1,0 +1,24 @@
+<%- include('../partials/head', { titre: 'Informations' }) %>
+<%- include('../partials/nav-planteur') %>
+<div class="container">
+  <h1>Informations</h1>
+
+  <% informations.forEach(function(info) { %>
+    <div class="card">
+      <p style="white-space:pre-wrap;"><%= info.contenu %></p>
+      <% if (info.fichier && info.type_media === 'image') { %>
+        <img src="/uploads/informations/<%= info.fichier %>" alt="Image jointe" style="max-width:100%; border-radius:8px; margin-top:8px;">
+      <% } else if (info.fichier && info.type_media === 'video') { %>
+        <video src="/uploads/informations/<%= info.fichier %>" controls style="max-width:100%; border-radius:8px; margin-top:8px;"></video>
+      <% } else if (info.fichier && info.type_media === 'audio') { %>
+        <audio src="/uploads/informations/<%= info.fichier %>" controls style="margin-top:8px;"></audio>
+      <% } %>
+      <p class="muted" style="margin-top:8px; font-size:12px;">Publie le <%= info.cree_le %></p>
+    </div>
+  <% }); %>
+  <% if (informations.length === 0) { %>
+    <div class="card"><p class="muted">Aucune information pour le moment.</p></div>
+  <% } %>
+</div>
+</body>
+</html>

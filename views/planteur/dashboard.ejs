@@ -1,7 +1,7 @@
 <%- include('../partials/head', { titre: 'Mon espace' }) %>
 <%- include('../partials/nav-planteur') %>
 <div class="container">
-  <h1>Bonjour <%= planteur.prenoms %> <%= planteur.nom %></h1>
+  <h1>Bonjour <%= planteur.nom %> <%= planteur.prenoms %></h1>
   <p class="muted">Mois en cours : <%= formaterPeriode(periode) %></p>
 
   <% if (typeof erreur !== 'undefined' && erreur === 'mdp') { %>
@@ -13,16 +13,25 @@
 
   <div class="grid-stats">
     <div class="stat">
-      <div class="label">Prix du kg ce mois</div>
-      <div class="value"><%= recap.prixKg ? formaterMontant(recap.prixKg) : 'Non defini' %></div>
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.5 9a2.5 2.5 0 0 0-2.5-1.5c-1.5 0-2.5.9-2.5 2s1 1.6 2.5 2 2.5.9 2.5 2-1 2-2.5 2A2.5 2.5 0 0 1 9.5 14"/><path d="M12 6v1.5M12 16.5V18"/></svg></div>
+      <div class="stat-body">
+        <div class="label">Prix du kg ce mois</div>
+        <div class="value"><%= recap.prixKg ? formaterMontant(recap.prixKg) : 'Non defini' %></div>
+      </div>
     </div>
     <div class="stat">
-      <div class="label">Poids total livre</div>
-      <div class="value"><%= recap.poidsTotal.toFixed(1) %> kg</div>
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg></div>
+      <div class="stat-body">
+        <div class="label">Poids total livre</div>
+        <div class="value"><%= recap.poidsTotal.toFixed(1) %> kg</div>
+      </div>
     </div>
     <div class="stat">
-      <div class="label">Montant a percevoir</div>
-      <div class="value"><%= formaterMontant(recap.montant) %></div>
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 6v12M18 6v12"/></svg></div>
+      <div class="stat-body">
+        <div class="label">Montant a percevoir</div>
+        <div class="value"><%= formaterMontant(recap.montant) %></div>
+      </div>
     </div>
   </div>
 
@@ -31,6 +40,7 @@
     <% if (recap.pesees.length === 0) { %>
       <p class="muted">Aucune pesee enregistree pour ce mois pour le moment.</p>
     <% } else { %>
+      <div class="table-responsive">
       <table>
         <thead><tr><th>Date</th><th>Poids (kg)</th></tr></thead>
         <tbody>
@@ -39,16 +49,23 @@
           <% }); %>
         </tbody>
       </table>
+      </div>
     <% } %>
   </div>
 
   <div class="card">
     <h2>Mes informations de paiement</h2>
-    <table>
-      <tr><td>Moyen de paiement</td><td><%= planteur.moyen_paiement || 'Non renseigne' %></td></tr>
-      <tr><td>Contact de paiement</td><td><%= planteur.contact_paiement || 'Non renseigne' %></td></tr>
-    </table>
-    <p class="muted" style="margin-top:8px;">Pour modifier ces informations, contactez l'administrateur.</p>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Moyen de paiement</div>
+        <div class="info-value"><%= planteur.moyen_paiement || 'Non renseigne' %></div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Contact de paiement</div>
+        <div class="info-value"><%= planteur.contact_paiement || 'Non renseigne' %></div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:14px; text-align:center;">Pour modifier ces informations, contactez l'administrateur.</p>
   </div>
 
   <div class="card">
@@ -60,11 +77,23 @@
       <div class="form-row">
         <div class="form-group">
           <label>Mot de passe actuel</label>
-          <input type="password" name="mot_de_passe_actuel" required>
+          <div class="password-field">
+            <input type="password" name="mot_de_passe_actuel" id="pwd-actuel" required>
+            <button type="button" class="pwd-toggle" data-target="pwd-actuel" aria-label="Afficher le mot de passe">
+              <svg class="icon icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="icon icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.6 21.6 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a21.6 21.6 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+            </button>
+          </div>
         </div>
         <div class="form-group">
           <label>Nouveau mot de passe</label>
-          <input type="password" name="nouveau_mot_de_passe" required minlength="6">
+          <div class="password-field">
+            <input type="password" name="nouveau_mot_de_passe" id="pwd-nouveau" required minlength="6">
+            <button type="button" class="pwd-toggle" data-target="pwd-nouveau" aria-label="Afficher le mot de passe">
+              <svg class="icon icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="icon icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.6 21.6 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a21.6 21.6 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+            </button>
+          </div>
         </div>
       </div>
       <button class="btn green" type="submit">Modifier le mot de passe</button>

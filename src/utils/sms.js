@@ -25,4 +25,24 @@ async function envoyerIdentifiantsParSms(numeroTelephone, identifiant, motDePass
   return { envoye: true, canal: 'sms-simule', message };
 }
 
-module.exports = { envoyerIdentifiantsParSms };
+/**
+ * Envoi du code de reinitialisation de mot de passe par SMS.
+ * Meme principe que envoyerIdentifiantsParSms : simule l'envoi en dev,
+ * a brancher sur un vrai fournisseur SMS en production.
+ */
+async function envoyerCodeReinitialisationParSms(numeroTelephone, code) {
+  const message =
+    `Code de reinitialisation de votre mot de passe Hevea : ${code}. ` +
+    `Ce code expire dans 15 minutes. Ne le partagez avec personne.`;
+
+  if (process.env.SMS_API_KEY) {
+    // TODO: integrer ici l'appel HTTP vers le fournisseur SMS choisi.
+    console.log(`[SMS -> ${numeroTelephone}] (integration reelle a completer) ${message}`);
+  } else {
+    console.log(`[SMS SIMULE -> ${numeroTelephone}] ${message}`);
+  }
+
+  return { envoye: true, canal: 'sms-simule', message };
+}
+
+module.exports = { envoyerIdentifiantsParSms, envoyerCodeReinitialisationParSms };

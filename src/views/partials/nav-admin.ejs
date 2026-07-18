@@ -1,0 +1,38 @@
+<header class="topbar navbar">
+  <div class="brand">
+    <!-- Remplace '/images/logo.png' par le chemin exact vers ton logo dans ton dossier public -->
+    <a href="/admin" class="brand-link">
+      <img src="/Images/logo.png" alt="Logo" class="app-logo">
+      <span>Gestion Planteurs Hevea — Admin</span>
+    </a>
+  </div>
+
+  <!-- Bouton Hamburger (Burger) -->
+  <button class="burger-btn" id="burgerBtn" type="button" aria-label="Menu">
+    ☰
+  </button>
+  
+  <!-- Navigation -->
+  <nav class="nav-links" id="navLinks">
+    <a href="/admin">Tableau de bord</a>
+    <a href="/admin/planteurs">Planteurs</a>
+    <a href="/admin/mois">Saisie mensuelle</a>
+    <a href="/admin/recap">Récapitulatif</a>
+    <a href="/admin/historique">Historique</a>
+    <a href="/admin/informations">Informations</a>
+    <a href="/logout">Déconnexion (Administrateur)</a>
+  </nav>
+</header>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const burgerBtn = document.getElementById('burgerBtn');
+    const navLinks = document.getElementById('navLinks');
+
+    if (burgerBtn && navLinks) {
+      burgerBtn.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+      });
+    }
+  });
+</script>

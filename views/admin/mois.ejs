@@ -38,7 +38,7 @@
           <select name="planteur_id" required>
             <option value="">-- Choisir un planteur --</option>
             <% planteurs.forEach(function(p) { %>
-              <option value="<%= p.id %>"><%= p.prenoms %> <%= p.nom %></option>
+              <option value="<%= p.id %>"><%= p.nom %> <%= p.prenoms %></option>
             <% }); %>
           </select>
         </div>
@@ -60,6 +60,7 @@
     <% if (pesees.length === 0) { %>
       <p class="muted">Aucune pesee enregistree pour ce mois.</p>
     <% } else { %>
+      <div class="table-responsive">
       <table>
         <thead><tr><th>Planteur</th><th>Date</th><th>Poids (kg)</th><th></th></tr></thead>
         <tbody>
@@ -77,6 +78,7 @@
           <% }); %>
         </tbody>
       </table>
+      </div>
     <% } %>
   </div>
 

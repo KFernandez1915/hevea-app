@@ -1,0 +1,45 @@
+<%- include('../partials/head', { titre: 'Corbeille des planteurs' }) %>
+<%- include('../partials/nav-admin') %>
+<div class="container">
+  <h1>Corbeille des planteurs</h1>
+  <p class="muted">Les planteurs supprimes apparaissent ici. Ils n'apparaissent plus dans la liste principale, mais leur historique de pesees est conserve tant qu'ils ne sont pas supprimes definitivement.</p>
+
+  <% if (message) { %>
+    <div class="alert info"><%= message %></div>
+  <% } %>
+
+  <div class="card">
+    <a class="btn grey" href="/admin/planteurs">&larr; Retour a la liste des planteurs</a>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Nom</th><th>Contact</th><th>Identifiant</th><th>Supprime le</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% planteurs.forEach(function(p) { %>
+          <tr>
+            <td><%= p.nom %> <%= p.prenoms %></td>
+            <td><%= p.contact || '-' %></td>
+            <td><%= p.identifiant %></td>
+            <td><%= p.supprime_le || '-' %></td>
+            <td>
+              <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/restaurer">
+                <button class="btn small green" type="submit">Restaurer</button>
+              </form>
+              <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/supprimer-definitivement" onsubmit="return confirm('Supprimer definitivement ce planteur ? Son historique de pesees sera egalement efface. Cette action est irreversible.');">
+                <button class="btn small red" type="submit">Supprimer definitivement</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+        <% if (planteurs.length === 0) { %>
+          <tr><td colspan="5" class="muted">La corbeille est vide.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>

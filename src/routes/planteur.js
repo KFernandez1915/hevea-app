@@ -58,4 +58,9 @@ router.post('/mot-de-passe', (req, res) => {
   res.redirect('/planteur?message=mdp_modifie');
 });
 
+router.get('/informations', (req, res) => {
+  const informations = db.prepare('SELECT * FROM informations ORDER BY cree_le DESC').all();
+  res.render('planteur/informations', { informations });
+});
+
 module.exports = router;

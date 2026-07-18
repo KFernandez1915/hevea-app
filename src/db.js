@@ -52,7 +52,32 @@ CREATE TABLE IF NOT EXISTS pesees (
 
 CREATE INDEX IF NOT EXISTS idx_pesees_periode ON pesees(periode);
 CREATE INDEX IF NOT EXISTS idx_pesees_planteur ON pesees(planteur_id);
+
+CREATE TABLE IF NOT EXISTS informations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  titre TEXT NOT NULL,
+  contenu TEXT,
+  fichier_nom TEXT,
+  fichier_type TEXT,        -- 'image', 'video', 'audio' ou NULL
+  fichier_mime TEXT,
+  cree_le TEXT DEFAULT (datetime('now'))
+);
 `);
+
+// --- Migration legere : colonnes de reinitialisation de mot de passe (planteurs) ---
+// Ajoutees via ALTER TABLE pour ne pas casser les bases existantes deja en place.
+const colonnesPlanteurs = db.prepare("PRAGMA table_info(planteurs)").all().map((c) => c.name);
+const migrationsReset = [
+  ['reset_code_hash', "ALTER TABLE planteurs ADD COLUMN reset_code_hash TEXT"],
+  ['reset_expire_le', "ALTER TABLE planteurs ADD COLUMN reset_expire_le TEXT"],
+  ['reset_tentatives', "ALTER TABLE planteurs ADD COLUMN reset_tentatives INTEGER DEFAULT 0"],
+  ['reset_demande_le', "ALTER TABLE planteurs ADD COLUMN reset_demande_le TEXT"],
+];
+for (const [colonne, sql] of migrationsReset) {
+  if (!colonnesPlanteurs.includes(colonne)) {
+    db.exec(sql);
+  }
+}
 
 // Compte admin par defaut si aucun n'existe (identifiants a changer immediatement)
 const adminCount = db.prepare('SELECT COUNT(*) AS n FROM admins').get().n;

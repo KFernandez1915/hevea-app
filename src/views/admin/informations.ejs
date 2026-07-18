@@ -1,0 +1,52 @@
+<%- include('../partials/head', { titre: 'Informations' }) %>
+<%- include('../partials/nav-admin') %>
+<div class="container">
+  <h1>Informations</h1>
+  <p class="muted">Publiez des annonces visibles par tous les planteurs dans leur espace. Vous pouvez y joindre une image, une video ou un audio.</p>
+
+  <% if (message) { %>
+    <div class="alert info"><%= message %></div>
+  <% } %>
+  <% if (erreur) { %>
+    <div class="alert error"><%= erreur %></div>
+  <% } %>
+
+  <div class="card">
+    <form method="POST" action="/admin/informations" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Texte de l'information</label>
+        <textarea name="contenu" required rows="4" placeholder="Ecrivez votre message aux planteurs..." style="width:100%; padding:8px 10px; border:1px solid #ccc; border-radius:8px; font-family:inherit;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Piece jointe (image, video ou audio) — optionnel</label>
+        <input type="file" name="media" accept="image/*,video/*,audio/*">
+      </div>
+      <button class="btn green" type="submit">Publier</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Informations publiees</h2>
+    <% informations.forEach(function(info) { %>
+      <div class="card" style="background:#fafafa;">
+        <p style="white-space:pre-wrap;"><%= info.contenu %></p>
+        <% if (info.fichier && info.type_media === 'image') { %>
+          <img src="/uploads/informations/<%= info.fichier %>" alt="Image jointe" style="max-width:100%; border-radius:8px; margin-top:8px;">
+        <% } else if (info.fichier && info.type_media === 'video') { %>
+          <video src="/uploads/informations/<%= info.fichier %>" controls style="max-width:100%; border-radius:8px; margin-top:8px;"></video>
+        <% } else if (info.fichier && info.type_media === 'audio') { %>
+          <audio src="/uploads/informations/<%= info.fichier %>" controls style="margin-top:8px;"></audio>
+        <% } %>
+        <p class="muted" style="margin-top:8px; font-size:12px;">Publie par <%= info.auteur || 'Administrateur' %> le <%= info.cree_le %></p>
+        <form method="POST" action="/admin/informations/<%= info.id %>/supprimer" onsubmit="return confirm('Supprimer cette information ?');" style="margin-top:8px;">
+          <button class="btn small red" type="submit">Supprimer</button>
+        </form>
+      </div>
+    <% }); %>
+    <% if (informations.length === 0) { %>
+      <p class="muted">Aucune information publiee pour le moment.</p>
+    <% } %>
+  </div>
+</div>
+</body>
+</html>

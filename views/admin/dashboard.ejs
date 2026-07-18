@@ -12,28 +12,42 @@
 
   <div class="grid-stats">
     <div class="stat">
-      <div class="label">Planteurs actifs</div>
-      <div class="value"><%= nbPlanteursActifs %></div>
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="stat-body">
+        <div class="label">Planteurs actifs</div>
+        <div class="value"><%= nbPlanteursActifs %></div>
+      </div>
     </div>
     <div class="stat">
-      <div class="label">Prix du kg (<%= formaterPeriode(periode) %>)</div>
-      <div class="value"><%= prixKg ? formaterMontant(prixKg) : 'Non defini' %></div>
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.5 9a2.5 2.5 0 0 0-2.5-1.5c-1.5 0-2.5.9-2.5 2s1 1.6 2.5 2 2.5.9 2.5 2-1 2-2.5 2A2.5 2.5 0 0 1 9.5 14"/><path d="M12 6v1.5M12 16.5V18"/></svg></div>
+      <div class="stat-body">
+        <div class="label">Prix du kg (<%= formaterPeriode(periode) %>)</div>
+        <div class="value"><%= prixKg ? formaterMontant(prixKg) : 'Non defini' %></div>
+      </div>
     </div>
     <div class="stat">
-      <div class="label">Planteurs ayant vendu ce mois</div>
-      <div class="value"><%= lignes.length %></div>
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg></div>
+      <div class="stat-body">
+        <div class="label">Planteurs ayant vendu ce mois</div>
+        <div class="value"><%= lignes.length %></div>
+      </div>
     </div>
     <div class="stat">
-      <div class="label">Montant total du mois</div>
-      <div class="value"><%= formaterMontant(totaux.montant) %></div>
+      <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 6v12M18 6v12"/></svg></div>
+      <div class="stat-body">
+        <div class="label">Montant total du mois</div>
+        <div class="value"><%= formaterMontant(totaux.montant) %></div>
+      </div>
     </div>
   </div>
 
   <div class="card">
     <h2>Actions rapides</h2>
-    <p><a class="btn green" href="/admin/mois?periode=<%= periode %>">Saisir les pesees du mois</a>
+    <div class="actions-row">
+       <a class="btn green" href="/admin/mois?periode=<%= periode %>">Saisir les pesees du mois</a>
        <a class="btn" href="/admin/recap?periode=<%= periode %>">Voir le recapitulatif complet</a>
-       <a class="btn grey" href="/admin/planteurs/nouveau">Ajouter un planteur</a></p>
+       <a class="btn grey" href="/admin/planteurs/nouveau">Ajouter un planteur</a>
+    </div>
   </div>
 
   <% if (!prixKg) { %>
@@ -45,6 +59,7 @@
     <% if (lignes.length === 0) { %>
       <p class="muted">Aucune pesee enregistree pour ce mois.</p>
     <% } else { %>
+      <div class="table-responsive">
       <table>
         <thead><tr><th>Planteur</th><th>Pesees</th><th>Poids total (kg)</th><th>Montant</th></tr></thead>
         <tbody>
@@ -58,6 +73,7 @@
           <% }); %>
         </tbody>
       </table>
+      </div>
     <% } %>
   </div>
 </div>

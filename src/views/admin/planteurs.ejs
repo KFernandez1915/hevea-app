@@ -1,0 +1,58 @@
+<%- include('../partials/head', { titre: 'Planteurs' }) %>
+<%- include('../partials/nav-admin') %>
+<div class="container">
+  <h1>Planteurs</h1>
+
+  <% if (message) { %>
+    <div class="alert info"><%= message %></div>
+  <% } %>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <form method="GET" action="/admin/planteurs" style="display:flex; gap:8px;">
+        <input type="text" name="q" placeholder="Rechercher un planteur..." value="<%= q %>" style="padding:8px 10px; border:1px solid #ccc; border-radius:8px; min-width:220px;">
+        <button class="btn grey" type="submit">Rechercher</button>
+      </form>
+      <div style="display:flex; gap:8px;">
+        <a class="btn grey" href="/admin/planteurs/corbeille">🗑 Corbeille<% if (nbCorbeille > 0) { %> (<%= nbCorbeille %>)<% } %></a>
+        <a class="btn green" href="/admin/planteurs/nouveau">+ Nouveau planteur</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Nom</th><th>Contact</th><th>Identifiant</th><th>Paiement</th><th>Statut</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% planteurs.forEach(function(p) { %>
+          <tr>
+            <td><%= p.nom %> <%= p.prenoms %></td>
+            <td><%= p.contact || '-' %></td>
+            <td><%= p.identifiant %></td>
+            <td><%= p.moyen_paiement ? (p.moyen_paiement + (p.contact_paiement ? ' — ' + p.contact_paiement : '')) : '-' %></td>
+            <td><span class="badge <%= p.statut %>"><%= p.statut %></span></td>
+            <td>
+              <a class="btn small" href="/admin/planteurs/<%= p.id %>/modifier">Modifier</a>
+              <% if (p.statut === 'actif') { %>
+                <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/supprimer" onsubmit="return confirm('Desactiver ce planteur ? Son historique sera conserve.');">
+                  <button class="btn small red" type="submit">Supprimer</button>
+                </form>
+              <% } else { %>
+                <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/reactiver">
+                  <button class="btn small green" type="submit">Reactiver</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }); %>
+        <% if (planteurs.length === 0) { %>
+          <tr><td colspan="6" class="muted">Aucun planteur trouve.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>

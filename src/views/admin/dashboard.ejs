@@ -1,0 +1,65 @@
+<%- include('../partials/head', { titre: 'Tableau de bord' }) %>
+<%- include('../partials/nav-admin') %>
+<div class="container">
+  <h1>Tableau de bord — <%= formaterPeriode(periode) %></h1>
+
+  <form method="GET" action="/admin" style="margin-bottom:18px;">
+    <div class="form-group" style="max-width:220px;">
+      <label>Changer de mois</label>
+      <input type="month" name="periode" value="<%= periode %>" onchange="this.form.submit()">
+    </div>
+  </form>
+
+  <div class="grid-stats">
+    <div class="stat">
+      <div class="label">Planteurs actifs</div>
+      <div class="value"><%= nbPlanteursActifs %></div>
+    </div>
+    <div class="stat">
+      <div class="label">Prix du kg (<%= formaterPeriode(periode) %>)</div>
+      <div class="value"><%= prixKg ? formaterMontant(prixKg) : 'Non defini' %></div>
+    </div>
+    <div class="stat">
+      <div class="label">Planteurs ayant vendu ce mois</div>
+      <div class="value"><%= lignes.length %></div>
+    </div>
+    <div class="stat">
+      <div class="label">Montant total du mois</div>
+      <div class="value"><%= formaterMontant(totaux.montant) %></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Actions rapides</h2>
+    <p><a class="btn green" href="/admin/mois?periode=<%= periode %>">Saisir les pesees du mois</a>
+       <a class="btn" href="/admin/recap?periode=<%= periode %>">Voir le recapitulatif complet</a>
+       <a class="btn grey" href="/admin/planteurs/nouveau">Ajouter un planteur</a></p>
+  </div>
+
+  <% if (!prixKg) { %>
+    <div class="alert error">Le prix du kg n'a pas encore ete defini pour ce mois. Le recapitulatif ne peut pas etre calcule tant qu'il n'est pas renseigne.</div>
+  <% } %>
+
+  <div class="card">
+    <h2>Apercu du mois</h2>
+    <% if (lignes.length === 0) { %>
+      <p class="muted">Aucune pesee enregistree pour ce mois.</p>
+    <% } else { %>
+      <table>
+        <thead><tr><th>Planteur</th><th>Pesees</th><th>Poids total (kg)</th><th>Montant</th></tr></thead>
+        <tbody>
+          <% lignes.forEach(function(l) { %>
+            <tr>
+              <td><%= l.nom_complet %></td>
+              <td><%= l.nb_pesees %></td>
+              <td><%= l.poids_total.toFixed(1) %></td>
+              <td><%= formaterMontant(l.montant) %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</div>
+</body>
+</html>

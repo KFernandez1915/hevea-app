@@ -1,22 +1,56 @@
 <%- include('partials/head', { titre: 'Connexion Administrateur' }) %>
-<div class="login-wrap">
-  <h1>Connexion Admin</h1>
-  <p class="subtitle">Espace de gestion des planteurs</p>
-  <% if (erreur) { %>
-    <div class="alert error"><%= erreur %></div>
-  <% } %>
-  <form method="POST" action="/admin/connexion">
-    <div class="form-group">
-      <label>Identifiant</label>
-      <input type="text" name="identifiant" required autofocus>
+<div class="auth-shell">
+  <div class="auth-panel-brand">
+    <svg class="tap-motif" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round">
+        <path d="M40 40 Q120 90 40 140 Q-40 190 40 240 Q120 290 40 340 Q-40 390 40 440"/>
+        <path d="M160 0 Q240 60 160 120 Q80 180 160 240 Q240 300 160 360 Q80 420 160 480"/>
+        <path d="M300 20 Q380 80 300 140 Q220 200 300 260 Q380 320 300 380 Q220 440 300 500"/>
+      </g>
+      <g fill="#ffffff">
+        <circle cx="40" cy="140" r="3"/>
+        <circle cx="160" cy="120" r="3"/>
+        <circle cx="300" cy="140" r="3"/>
+      </g>
+    </svg>
+    <div class="brand-mark">
+      <img src="/Images/logo.png" alt="Logo Hevea">
+      <span>Gestion Planteurs Hevea</span>
     </div>
-    <div class="form-group">
-      <label>Mot de passe</label>
-      <input type="password" name="mot_de_passe" required>
+    <div class="pitch">
+      <h2>Pilotez la pesée et les paiements de chaque planteur, mois après mois.</h2>
+      <p>Prix du kg, poids collectés, montants dus : un seul espace pour suivre la campagne et générer les récapitulatifs de l'association.</p>
     </div>
-    <button class="btn green" style="width:100%;" type="submit">Se connecter</button>
-  </form>
-  <p class="muted" style="text-align:center; margin-top:16px;"><a href="/planteur/connexion">Je suis planteur →</a></p>
+    <div class="pitch-foot">Espace réservé aux administrateurs de l'association.</div>
+  </div>
+
+  <div class="auth-panel-form">
+    <div class="login-wrap">
+      <h1>Connexion Admin</h1>
+      <p class="subtitle">Espace de gestion des planteurs</p>
+      <% if (erreur) { %>
+        <div class="alert error"><%= erreur %></div>
+      <% } %>
+      <form method="POST" action="/admin/connexion">
+        <div class="form-group">
+          <label>Identifiant</label>
+          <input type="text" name="identifiant" required autofocus>
+        </div>
+        <div class="form-group">
+          <label>Mot de passe</label>
+          <div class="password-field">
+            <input type="password" name="mot_de_passe" id="admin-pwd" required>
+            <button type="button" class="pwd-toggle" data-target="admin-pwd" aria-label="Afficher le mot de passe">
+              <svg class="icon icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="icon icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.6 21.6 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a21.6 21.6 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+            </button>
+          </div>
+        </div>
+        <button class="btn green" type="submit">Se connecter</button>
+      </form>
+      <p class="muted" style="text-align:center; margin-top:18px;"><a href="/planteur/connexion">Je suis planteur →</a></p>
+    </div>
+  </div>
 </div>
 </body>
 </html>

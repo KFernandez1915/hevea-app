@@ -7,6 +7,7 @@
     <div class="card"><p class="muted">Aucun historique disponible pour le moment.</p></div>
   <% } else { %>
     <div class="card">
+      <div class="table-responsive">
       <table>
         <thead><tr><th>Mois</th><th>Prix du kg</th><th>Poids total (kg)</th><th>Montant</th></tr></thead>
         <tbody>
@@ -20,6 +21,7 @@
           <% }); %>
         </tbody>
       </table>
+      </div>
     </div>
   <% } %>
 </div>

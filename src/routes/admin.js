@@ -1,10 +1,13 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const path = require('path');
+const fs = require('fs');
 const db = require('../db');
 const { exigerAdmin } = require('../middleware/auth');
 const { genererMotDePasseTemporaire, genererIdentifiant, periodeCourante } = require('../utils/helpers');
 const { envoyerIdentifiantsParSms } = require('../utils/sms');
 const { genererExcelRecap, genererPdfRecap } = require('../utils/export');
+const { upload, typeDepuisMime, UPLOAD_DIR } = require('../utils/upload');
 
 const router = express.Router();
 router.use(exigerAdmin);
@@ -15,7 +18,7 @@ function calculerRecap(periode) {
 
   const lignes = db.prepare(`
     SELECT p.id AS planteur_id,
-           (p.prenoms || ' ' || p.nom) AS nom_complet,
+           (p.nom || ' ' || p.prenoms) AS nom_complet,
            p.contact AS contact,
            COUNT(pz.id) AS nb_pesees,
            COALESCE(SUM(pz.poids_kg), 0) AS poids_total
@@ -125,7 +128,7 @@ router.get('/mois', (req, res) => {
   const prixRow = db.prepare('SELECT prix_kg FROM prix_mois WHERE periode = ?').get(periode);
   const planteurs = db.prepare("SELECT * FROM planteurs WHERE statut = 'actif' ORDER BY nom, prenoms").all();
   const pesees = db.prepare(`
-    SELECT pz.*, (p.prenoms || ' ' || p.nom) AS nom_complet
+    SELECT pz.*, (p.nom || ' ' || p.prenoms) AS nom_complet
     FROM pesees pz JOIN planteurs p ON p.id = pz.planteur_id
     WHERE pz.periode = ?
     ORDER BY pz.date_pesee DESC
@@ -193,6 +196,56 @@ router.get('/recap/export/pdf', async (req, res) => {
 router.get('/historique', (req, res) => {
   const periodes = db.prepare('SELECT DISTINCT periode FROM pesees ORDER BY periode DESC').all().map((r) => r.periode);
   res.render('admin/historique', { adminNom: req.session.adminNom, periodes });
+});
+
+// --- Informations (annonces avec texte + image/video/audio) ---
+router.get('/informations', (req, res) => {
+  const informations = db.prepare('SELECT * FROM informations ORDER BY cree_le DESC').all();
+  res.render('admin/informations', {
+    adminNom: req.session.adminNom,
+    informations,
+    message: req.query.message || null,
+    erreur: req.query.erreur || null,
+  });
+});
+
+router.post('/informations', (req, res, next) => {
+  upload.single('fichier')(req, res, (err) => {
+    if (err) {
+      return res.redirect(`/admin/informations?erreur=${encodeURIComponent(err.message)}`);
+    }
+    next();
+  });
+}, (req, res) => {
+  const { titre, contenu } = req.body;
+  if (!titre || !titre.trim()) {
+    return res.redirect(`/admin/informations?erreur=${encodeURIComponent('Le titre est obligatoire.')}`);
+  }
+  const fichier = req.file;
+  const fichierType = fichier ? typeDepuisMime(fichier.mimetype) : null;
+
+  db.prepare(`
+    INSERT INTO informations (titre, contenu, fichier_nom, fichier_type, fichier_mime)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(
+    titre.trim(),
+    contenu ? contenu.trim() : null,
+    fichier ? fichier.filename : null,
+    fichierType,
+    fichier ? fichier.mimetype : null
+  );
+
+  res.redirect(`/admin/informations?message=${encodeURIComponent('Information publiee.')}`);
+});
+
+router.post('/informations/:id/supprimer', (req, res) => {
+  const info = db.prepare('SELECT * FROM informations WHERE id = ?').get(req.params.id);
+  if (info && info.fichier_nom) {
+    const filePath = path.join(UPLOAD_DIR, info.fichier_nom);
+    fs.unlink(filePath, () => {});
+  }
+  db.prepare('DELETE FROM informations WHERE id = ?').run(req.params.id);
+  res.redirect(`/admin/informations?message=${encodeURIComponent('Information supprimee.')}`);
 });
 
 module.exports = router;

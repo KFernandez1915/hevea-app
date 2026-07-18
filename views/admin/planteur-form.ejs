@@ -34,7 +34,7 @@
           <label>Moyen de paiement</label>
           <select name="moyen_paiement">
             <option value="">-- Choisir --</option>
-            <% ['Orange Money', 'Wave', 'MTN Money', 'Virement', 'Virement', 'Espèce', 'Moov Money'].forEach(function(m) { %>
+            <% ['Orange Money', 'Wave', 'MTN Money', 'Moov Money', 'Virement', 'Espèce'].forEach(function(m) { %>
               <option value="<%= m %>" <%= (planteur && planteur.moyen_paiement === m) ? 'selected' : '' %>><%= m %></option>
             <% }); %>
           </select>

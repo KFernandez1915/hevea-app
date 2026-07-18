@@ -1,0 +1,55 @@
+<%- include('../partials/head', { titre: 'Recapitulatif mensuel' }) %>
+<%- include('../partials/nav-admin') %>
+<div class="container">
+  <h1>Recapitulatif — <%= formaterPeriode(periode) %></h1>
+
+  <form method="GET" action="/admin/recap" style="margin-bottom:18px;">
+    <div class="form-group" style="max-width:220px;">
+      <label>Mois</label>
+      <input type="month" name="periode" value="<%= periode %>" onchange="this.form.submit()">
+    </div>
+  </form>
+
+  <% if (!prixKg) { %>
+    <div class="alert error">Le prix du kg n'a pas ete defini pour ce mois — <a href="/admin/mois?periode=<%= periode %>">le renseigner</a>.</div>
+  <% } else { %>
+
+  <div class="card export-links">
+    <strong>Exporter : </strong>
+    <a class="btn small green" href="/admin/recap/export/pdf?periode=<%= periode %>">Export PDF</a>
+    <a class="btn small" href="/admin/recap/export/excel?periode=<%= periode %>">Export Excel</a>
+  </div>
+
+  <div class="grid-stats">
+    <div class="stat"><div class="label">Prix du kg</div><div class="value"><%= formaterMontant(prixKg) %></div></div>
+    <div class="stat"><div class="label">Planteurs</div><div class="value"><%= lignes.length %></div></div>
+    <div class="stat"><div class="label">Poids total</div><div class="value"><%= totaux.poids_total.toFixed(1) %> kg</div></div>
+    <div class="stat"><div class="label">Montant total</div><div class="value"><%= formaterMontant(totaux.montant) %></div></div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Planteur</th><th>Contact</th><th>Nb pesees</th><th>Poids total (kg)</th><th>Montant</th></tr></thead>
+      <tbody>
+        <% lignes.forEach(function(l) { %>
+          <tr>
+            <td><%= l.nom_complet %></td>
+            <td><%= l.contact || '-' %></td>
+            <td><%= l.nb_pesees %></td>
+            <td><%= l.poids_total.toFixed(1) %></td>
+            <td><%= formaterMontant(l.montant) %></td>
+          </tr>
+        <% }); %>
+        <% if (lignes.length === 0) { %>
+          <tr><td colspan="5" class="muted">Aucune pesee pour ce mois.</td></tr>
+        <% } %>
+      </tbody>
+      <tfoot>
+        <tr><td>TOTAL</td><td></td><td><%= totaux.nb_pesees %></td><td><%= totaux.poids_total.toFixed(1) %></td><td><%= formaterMontant(totaux.montant) %></td></tr>
+      </tfoot>
+    </table>
+  </div>
+  <% } %>
+</div>
+</body>
+</html>

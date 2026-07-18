@@ -1,10 +1,34 @@
-<div class="topbar">
-  <div class="brand">🌳 Espace Planteur</div>
-  <nav>
-    <a href="/planteur">Mon mois</a>
-    <a href="/planteur/historique">Historique</a>
+<header class="topbar navbar">
+  <div class="brand">
+    <a href="/planteur" class="brand-link">
+      <img src="/Images/logo.png" alt="Logo" class="app-logo">
+      <span>Espace Planteur</span>
+    </a>
+  </div>
+
+  <button class="burger-btn" id="burgerBtnP" type="button" aria-label="Menu">
+    ☰
+  </button>
+
+  <nav class="nav-links" id="navLinksP">
+    <a href="/planteur"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> Mon mois</a>
+    <a href="/planteur/historique"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Historique</a>
+    <a href="/planteur/informations"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.5" r="0.9" fill="currentColor" stroke="none"/></svg> Informations</a>
     <form class="inline" method="POST" action="/planteur/deconnexion">
-      <a href="#" onclick="this.closest('form').submit(); return false;">Deconnexion</a>
+      <a href="#" onclick="this.closest('form').submit(); return false;"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg> Déconnexion</a>
     </form>
   </nav>
-</div>
+</header>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const burgerBtn = document.getElementById('burgerBtnP');
+    const navLinks = document.getElementById('navLinksP');
+
+    if (burgerBtn && navLinks) {
+      burgerBtn.addEventListener('click', function() {
+        navLinks.classList.toggle('open');
+      });
+    }
+  });
+</script>

@@ -1,8 +1,16 @@
+const crypto = require('crypto');
+
 function genererMotDePasseTemporaire() {
   const chiffres = Math.floor(1000 + Math.random() * 9000);
   const suffixes = ['hevea', 'planteur', 'assoc'];
   const s = suffixes[Math.floor(Math.random() * suffixes.length)];
   return `${s}${chiffres}`;
+}
+
+// Code numerique a 6 chiffres, genere via un generateur cryptographiquement sur
+// (et non Math.random, previsible) : utilise pour la reinitialisation de mot de passe.
+function genererCodeReinitialisation() {
+  return String(crypto.randomInt(100000, 1000000));
 }
 
 function genererIdentifiant(nom, prenoms, existants) {
@@ -38,6 +46,7 @@ function periodeCourante() {
 
 module.exports = {
   genererMotDePasseTemporaire,
+  genererCodeReinitialisation,
   genererIdentifiant,
   formaterMontant,
   formaterPeriode,

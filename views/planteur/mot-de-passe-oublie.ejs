@@ -1,0 +1,46 @@
+<%- include('../partials/head', { titre: 'Mot de passe oublié' }) %>
+<div class="auth-shell">
+  <div class="auth-panel-brand">
+    <svg class="tap-motif" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round">
+        <path d="M40 40 Q120 90 40 140 Q-40 190 40 240 Q120 290 40 340 Q-40 390 40 440"/>
+        <path d="M160 0 Q240 60 160 120 Q80 180 160 240 Q240 300 160 360 Q80 420 160 480"/>
+        <path d="M300 20 Q380 80 300 140 Q220 200 300 260 Q380 320 300 380 Q220 440 300 500"/>
+      </g>
+      <g fill="#ffffff">
+        <circle cx="40" cy="140" r="3"/>
+        <circle cx="160" cy="120" r="3"/>
+        <circle cx="300" cy="140" r="3"/>
+      </g>
+    </svg>
+    <div class="brand-mark">
+      <img src="/Images/logo.png" alt="Logo Hevea">
+      <span>Gestion Planteurs Hevea</span>
+    </div>
+    <div class="pitch">
+      <h2>On vous envoie un code pour repartir de zéro.</h2>
+      <p>Indiquez votre identifiant : un code de vérification est envoyé par SMS au numéro déjà enregistré sur votre compte.</p>
+    </div>
+    <div class="pitch-foot">Le code n'est jamais envoyé à un autre numéro que celui connu de l'association.</div>
+  </div>
+
+  <div class="auth-panel-form">
+    <div class="login-wrap">
+      <h1>Mot de passe oublié</h1>
+      <p class="subtitle">Étape 1 sur 2 — Identification</p>
+      <% if (erreur) { %>
+        <div class="alert error"><%= erreur %></div>
+      <% } %>
+      <form method="POST" action="/planteur/mot-de-passe-oublie">
+        <div class="form-group">
+          <label>Identifiant</label>
+          <input type="text" name="identifiant" required autofocus placeholder="Votre identifiant de connexion">
+        </div>
+        <button class="btn green" type="submit">Recevoir un code par SMS</button>
+      </form>
+      <p class="muted" style="text-align:center; margin-top:18px;"><a href="/planteur/connexion">← Retour à la connexion</a></p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
