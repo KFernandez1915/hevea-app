@@ -411,6 +411,22 @@ form.inline { display: inline; }
 }
 .empty-state svg { width: 40px; height: 40px; margin-bottom: 10px; opacity: 0.5; }
 
+/* ---------- Actualites (fil RSS + publications) ---------- */
+.actu-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.actu-post h3 { font-size: 16px; line-height: 1.4; }
+.actu-post h3 a {
+  color: var(--forest-dark);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.actu-post h3 a:hover { color: var(--forest); text-decoration: underline; }
+.actu-post .badge { font-size: 10.5px; text-transform: none; }
+
 /* ---------- Password field with show/hide toggle ---------- */
 .password-field { position: relative; }
 .password-field input { padding-right: 42px; }

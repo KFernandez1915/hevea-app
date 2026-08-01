@@ -8,6 +8,7 @@ const { genererMotDePasseTemporaire, genererIdentifiant, periodeCourante } = req
 const { envoyerIdentifiantsParSms } = require('../utils/sms');
 const { genererExcelRecap, genererPdfRecap } = require('../utils/export');
 const { upload, typeDepuisMime, UPLOAD_DIR } = require('../utils/upload');
+const { obtenirArticlesRss, invaliderCacheRss, CACHE_DUREE_MS } = require('../utils/rss');
 
 const router = express.Router();
 router.use(exigerAdmin);
@@ -246,6 +247,78 @@ router.post('/informations/:id/supprimer', (req, res) => {
   }
   db.prepare('DELETE FROM informations WHERE id = ?').run(req.params.id);
   res.redirect(`/admin/informations?message=${encodeURIComponent('Information supprimee.')}`);
+});
+
+// --- Actualites Hevea (flux RSS + publications manuelles de l'admin) ---
+async function chargerActualites() {
+  const [rss, publications] = await Promise.all([
+    obtenirArticlesRss(),
+    Promise.resolve(db.prepare('SELECT * FROM actualites ORDER BY cree_le DESC').all()),
+  ]);
+  const publiees = publications.map((p) => ({
+    ...p,
+    titre: p.titre,
+    description: p.contenu || null,
+    lien: p.lien || null,
+    source: 'Association',
+    date: p.cree_le,
+    dateVal: new Date(p.cree_le.replace(' ', 'T') + 'Z').getTime() || 0,
+    origine: 'manuelle',
+  }));
+  return [...publiees, ...rss].sort((a, b) => b.dateVal - a.dateVal);
+}
+
+router.get('/actualites', async (req, res) => {
+  const actualites = await chargerActualites();
+  const sources = db.prepare('SELECT * FROM sources_rss ORDER BY actif DESC, nom').all();
+  res.render('admin/actualites', {
+    adminNom: req.session.adminNom,
+    actualites,
+    sources,
+    cacheDureeMinutes: CACHE_DUREE_MS / 60000,
+    message: req.query.message || null,
+    erreur: req.query.erreur || null,
+  });
+});
+
+router.post('/actualites', (req, res) => {
+  const { titre, contenu, lien } = req.body;
+  if (!titre || !titre.trim()) {
+    return res.redirect(`/admin/actualites?erreur=${encodeURIComponent('Le titre est obligatoire.')}`);
+  }
+  db.prepare('INSERT INTO actualites (titre, contenu, lien) VALUES (?, ?, ?)')
+    .run(titre.trim(), contenu ? contenu.trim() : null, lien ? lien.trim() : null);
+  res.redirect(`/admin/actualites?message=${encodeURIComponent('Publication manuelle ajoutee.')}`);
+});
+
+router.post('/actualites/:id/supprimer', (req, res) => {
+  db.prepare('DELETE FROM actualites WHERE id = ?').run(req.params.id);
+  res.redirect(`/admin/actualites?message=${encodeURIComponent('Publication supprimee.')}`);
+});
+
+router.post('/actualites/sources', (req, res) => {
+  const { nom, url } = req.body;
+  if (!nom || !nom.trim() || !url || !url.trim()) {
+    return res.redirect(`/admin/actualites?erreur=${encodeURIComponent('Le nom et l\'URL de la source sont obligatoires.')}`);
+  }
+  db.prepare('INSERT INTO sources_rss (nom, url) VALUES (?, ?)').run(nom.trim(), url.trim());
+  invaliderCacheRss();
+  res.redirect(`/admin/actualites?message=${encodeURIComponent('Source RSS ajoutee, flux recharge.')}`);
+});
+
+router.post('/actualites/sources/:id/toggle', (req, res) => {
+  const source = db.prepare('SELECT * FROM sources_rss WHERE id = ?').get(req.params.id);
+  if (source) {
+    db.prepare('UPDATE sources_rss SET actif = ? WHERE id = ?').run(source.actif ? 0 : 1, req.params.id);
+    invaliderCacheRss();
+  }
+  res.redirect('/admin/actualites');
+});
+
+router.post('/actualites/sources/:id/supprimer', (req, res) => {
+  db.prepare('DELETE FROM sources_rss WHERE id = ?').run(req.params.id);
+  invaliderCacheRss();
+  res.redirect(`/admin/actualites?message=${encodeURIComponent('Source RSS supprimee, flux recharge.')}`);
 });
 
 module.exports = router;

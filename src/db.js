@@ -62,6 +62,22 @@ CREATE TABLE IF NOT EXISTS informations (
   fichier_mime TEXT,
   cree_le TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS sources_rss (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nom TEXT NOT NULL,
+  url TEXT NOT NULL,
+  actif INTEGER NOT NULL DEFAULT 1,
+  cree_le TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS actualites (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  titre TEXT NOT NULL,
+  contenu TEXT,
+  lien TEXT,
+  cree_le TEXT DEFAULT (datetime('now'))
+);
 `);
 
 // --- Migration legere : colonnes de reinitialisation de mot de passe (planteurs) ---
@@ -88,6 +104,19 @@ if (adminCount === 0) {
   db.prepare('INSERT INTO admins (nom, identifiant, mot_de_passe_hash) VALUES (?, ?, ?)')
     .run('Administrateur', defaultUser, hash);
   console.log(`[hevea-app] Compte admin initial cree -> identifiant: "${defaultUser}" / mot de passe: "${defaultPass}" (a changer)`);
+}
+
+// Source RSS par defaut si aucune n'est configuree : Google Actualites filtre
+// sur hevea/caoutchouc Cote d'Ivoire & Afrique (flux reel, aucun contenu invente).
+const nbSourcesRss = db.prepare('SELECT COUNT(*) AS n FROM sources_rss').get().n;
+if (nbSourcesRss === 0) {
+  db.prepare('INSERT INTO sources_rss (nom, url) VALUES (?, ?)').run(
+    'Google Actualites — Hevea / Caoutchouc CI & Afrique',
+    'https://news.google.com/rss/search?q=' +
+      encodeURIComponent('hévéa caoutchouc Côte d\'Ivoire Afrique') +
+      '&hl=fr&gl=CI&ceid=CI:fr'
+  );
+  console.log('[hevea-app] Source RSS par defaut inseree (Google Actualites Hevea).');
 }
 
 module.exports = db;

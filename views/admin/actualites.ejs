@@ -1,0 +1,128 @@
+<%- include('../partials/head', { titre: 'Actualites' }) %>
+<%- include('../partials/nav-admin') %>
+<div class="container">
+  <h1>Actualites Hevea</h1>
+  <p class="muted" style="margin-bottom:20px;">Fil d'actualites du caoutchouc (flux RSS reels, mis en cache <%= cacheDureeMinutes %> min) et publications manuelles de l'association.</p>
+
+  <% if (message) { %>
+    <div class="alert info"><%= message %></div>
+  <% } %>
+  <% if (erreur) { %>
+    <div class="alert error"><%= erreur %></div>
+  <% } %>
+
+  <div class="card">
+    <h2>Nouvelle publication manuelle</h2>
+    <form method="POST" action="/admin/actualites">
+      <div class="form-group">
+        <label>Titre</label>
+        <input type="text" name="titre" required placeholder="Ex: Reunion mensuelle du 15 septembre">
+      </div>
+      <div class="form-group">
+        <label>Contenu</label>
+        <textarea name="contenu" rows="4" placeholder="Ecrivez le contenu ici..." style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:7px; font-family:var(--font-body); font-size:14px; resize:vertical;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Lien (optionnel)</label>
+        <input type="url" name="lien" placeholder="https://...">
+      </div>
+      <button class="btn green" type="submit">Publier</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Sources RSS</h2>
+    <p class="muted" style="margin-bottom:14px;">Uniquement du contenu reel : aucune actualite n'est inventee.</p>
+    <% if (sources.length === 0) { %>
+      <p class="muted">Aucune source configuree.</p>
+    <% } else { %>
+      <div class="table-responsive">
+      <table>
+        <thead><tr><th>Source</th><th>URL</th><th>Etat</th><th>Actions</th></tr></thead>
+        <tbody>
+          <% sources.forEach(function(s) { %>
+            <tr>
+              <td><%= s.nom %></td>
+              <td style="word-break:break-all;"><a href="<%= s.url %>" target="_blank" rel="noopener noreferrer"><%= s.url %></a></td>
+              <td><span class="badge <%= s.actif ? 'actif' : 'inactif' %>"><%= s.actif ? 'Active' : 'Desactivee' %></span></td>
+              <td>
+                <div class="cell-actions">
+                  <form class="inline" method="POST" action="/admin/actualites/sources/<%= s.id %>/toggle">
+                    <button class="btn small <%= s.actif ? 'grey' : 'green' %>" type="submit"><%= s.actif ? 'Desactiver' : 'Activer' %></button>
+                  </form>
+                  <form class="inline" method="POST" action="/admin/actualites/sources/<%= s.id %>/supprimer" onsubmit="return confirm('Supprimer cette source RSS ?');">
+                    <button class="btn small red" type="submit">Supprimer</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
+    <% } %>
+    <form method="POST" action="/admin/actualites/sources" style="margin-top:16px;">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nom de la source</label>
+          <input type="text" name="nom" placeholder="Ex: Google Actualites Caoutchouc" required>
+        </div>
+        <div class="form-group">
+          <label>URL du flux RSS</label>
+          <input type="url" name="url" placeholder="https://.../rss" required>
+        </div>
+      </div>
+      <button class="btn grey" type="submit">Ajouter la source</button>
+    </form>
+  </div>
+
+  <h2 style="margin-top:28px;">Fil d'actualites</h2>
+
+  <% if (actualites.length === 0) { %>
+    <div class="card empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Z"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>
+      <p>Aucune actualite pour le moment. Ajoutez une publication ou configurez une source RSS.</p>
+    </div>
+  <% } else { %>
+    <% actualites.forEach(function(actu) { %>
+      <div class="info-post actu-post">
+        <div class="info-post-head">
+          <div class="actu-meta">
+            <% if (actu.origine === 'manuelle') { %>
+              <span class="badge actif">Association</span>
+            <% } else { %>
+              <span class="badge"><%= actu.source %></span>
+            <% } %>
+            <span class="info-post-date">
+              <% if (actu.dateVal) { %>
+                <%= new Date(actu.dateVal).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+              <% } %>
+            </span>
+          </div>
+        </div>
+        <h3 style="margin:6px 0;">
+          <% if (actu.lien) { %>
+            <a href="<%= actu.lien %>" target="_blank" rel="noopener noreferrer"><%= actu.titre %></a>
+          <% } else { %>
+            <%= actu.titre %>
+          <% } %>
+        </h3>
+        <% if (actu.description) { %>
+          <div class="info-post-body"><%= actu.description %></div>
+        <% } %>
+        <% if (actu.lien) { %>
+          <a class="btn small grey" href="<%= actu.lien %>" target="_blank" rel="noopener noreferrer">Lire l'article</a>
+        <% } %>
+        <% if (actu.origine === 'manuelle') { %>
+          <div class="actions-row" style="margin-top:14px;">
+            <form class="inline" method="POST" action="/admin/actualites/<%= actu.id %>/supprimer" onsubmit="return confirm('Supprimer cette publication ?');">
+              <button class="btn small red" type="submit">Supprimer</button>
+            </form>
+          </div>
+        <% } %>
+      </div>
+    <% }); %>
+  <% } %>
+</div>
+</body>
+</html>

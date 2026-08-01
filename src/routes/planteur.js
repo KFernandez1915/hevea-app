@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { exigerPlanteur } = require('../middleware/auth');
 const { periodeCourante } = require('../utils/helpers');
+const { obtenirArticlesRss } = require('../utils/rss');
 
 const router = express.Router();
 router.use(exigerPlanteur);
@@ -61,6 +62,25 @@ router.post('/mot-de-passe', (req, res) => {
 router.get('/informations', (req, res) => {
   const informations = db.prepare('SELECT * FROM informations ORDER BY cree_le DESC').all();
   res.render('planteur/informations', { informations });
+});
+
+router.get('/actualites', async (req, res) => {
+  const [rss, publications] = await Promise.all([
+    obtenirArticlesRss(),
+    Promise.resolve(db.prepare('SELECT * FROM actualites ORDER BY cree_le DESC').all()),
+  ]);
+  const publiees = publications.map((p) => ({
+    ...p,
+    titre: p.titre,
+    description: p.contenu || null,
+    lien: p.lien || null,
+    source: 'Association',
+    date: p.cree_le,
+    dateVal: new Date(p.cree_le.replace(' ', 'T') + 'Z').getTime() || 0,
+    origine: 'manuelle',
+  }));
+  const actualites = [...publiees, ...rss].sort((a, b) => b.dateVal - a.dateVal);
+  res.render('planteur/actualites', { actualites });
 });
 
 module.exports = router;

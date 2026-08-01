@@ -5,6 +5,7 @@ const path = require('path');
 
 require('./db'); // initialise la base de donnees et le compte admin par defaut
 const { formaterMontant, formaterPeriode } = require('./utils/helpers');
+const { rafraichirFluxRss, CACHE_DUREE_MS } = require('./utils/rss');
 
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
@@ -49,3 +50,24 @@ app.listen(PORT, () => {
 app.get('/ping', (req, res) => {
   res.status(200).send('OK');
 });
+
+// --- Rafraichissement periodique du flux RSS en arriere-plan ---
+// Recharge le flux toutes les 10 minutes, meme sans visite, afin que le
+// cache soit toujours pret a servir des actualites a jour. Un drapeau evite
+// que deux rechargements ne se chevauchent si un fetch est plus long que
+// l'intervalle (le rechargement suivant prendra le relais).
+let rechargementEnCours = false;
+async function rechargerActualites() {
+  if (rechargementEnCours) return;
+  rechargementEnCours = true;
+  try {
+    const nb = await rafraichirFluxRss();
+    console.log(`[hevea-app] Flux RSS actualise en arriere-plan (${nb} articles).`);
+  } catch (err) {
+    console.error('[hevea-app] Echec du rafraichissement RSS en arriere-plan :', err.message);
+  } finally {
+    rechargementEnCours = false;
+  }
+}
+rechargerActualites();
+setInterval(rechargerActualites, CACHE_DUREE_MS);
