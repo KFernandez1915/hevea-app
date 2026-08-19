@@ -14,6 +14,7 @@
   <div class="card">
     <h2>Publier une actualite</h2>
     <form method="POST" action="/admin/actualites/manuelles">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-group">
         <label>Titre</label>
         <input type="text" name="titre" required placeholder="Ex: Le prix du kg fixe pour le mois">
@@ -45,9 +46,11 @@
             <td class="col-center" data-label="Actions">
               <div class="cell-actions">
                 <form class="inline" method="POST" action="/admin/actualites/sources/<%= s.id %>/toggle">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <button class="btn small grey" type="submit"><%= s.actif ? 'Desactiver' : 'Activer' %></button>
                 </form>
                 <form class="inline" method="POST" action="/admin/actualites/sources/<%= s.id %>/supprimer" onsubmit="return confirm('Supprimer cette source ?');">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <button class="btn small red" type="submit">Supprimer</button>
                 </form>
               </div>
@@ -60,6 +63,7 @@
 
     <h2 style="margin-top:22px;">Ajouter une source</h2>
     <form method="POST" action="/admin/actualites/sources">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-row">
         <div class="form-group">
           <label>Nom de la source</label>

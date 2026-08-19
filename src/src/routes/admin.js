@@ -8,6 +8,7 @@ const { genererMotDePasseTemporaire, genererIdentifiant, periodeCourante } = req
 const { envoyerIdentifiantsParSms } = require('../utils/sms');
 const { genererExcelRecap, genererPdfRecap } = require('../utils/export');
 const { uploadInformation, typeMediaDepuisMime, UPLOAD_DIR } = require('../utils/upload');
+const { verifieToken } = require('../middleware/csrf');
 
 const router = express.Router();
 router.use(exigerAdmin);
@@ -165,25 +166,25 @@ router.post('/mois/prix', (req, res) => {
     INSERT INTO prix_mois (periode, prix_kg) VALUES (?, ?)
     ON CONFLICT(periode) DO UPDATE SET prix_kg = excluded.prix_kg
   `).run(periode, parseFloat(prix_kg));
-  res.redirect(`/admin/mois?periode=${periode}&message=${encodeURIComponent('Prix du kg enregistre.')}`);
+  res.redirect(`/admin/mois?periode=${encodeURIComponent(periode)}&message=${encodeURIComponent('Prix du kg enregistre.')}`);
 });
 
 router.post('/mois/pesee', (req, res) => {
   const { periode, planteur_id, date_pesee, poids_kg } = req.body;
   const poids = parseFloat(poids_kg);
   if (!planteur_id || !poids || poids <= 0) {
-    return res.redirect(`/admin/mois?periode=${periode}&message=${encodeURIComponent('Poids invalide.')}`);
+    return res.redirect(`/admin/mois?periode=${encodeURIComponent(periode)}&message=${encodeURIComponent('Poids invalide.')}`);
   }
   db.prepare(`
     INSERT INTO pesees (planteur_id, periode, date_pesee, poids_kg) VALUES (?, ?, ?, ?)
   `).run(planteur_id, periode, date_pesee || new Date().toISOString().slice(0, 10), poids);
-  res.redirect(`/admin/mois?periode=${periode}&message=${encodeURIComponent('Pesee enregistree.')}`);
+  res.redirect(`/admin/mois?periode=${encodeURIComponent(periode)}&message=${encodeURIComponent('Pesee enregistree.')}`);
 });
 
 router.post('/pesees/:id/supprimer', (req, res) => {
   const pesee = db.prepare('SELECT * FROM pesees WHERE id = ?').get(req.params.id);
   db.prepare('DELETE FROM pesees WHERE id = ?').run(req.params.id);
-  res.redirect(`/admin/mois?periode=${pesee ? pesee.periode : ''}&message=${encodeURIComponent('Pesee supprimee.')}`);
+  res.redirect(`/admin/mois?periode=${encodeURIComponent(pesee ? pesee.periode : '')}&message=${encodeURIComponent('Pesee supprimee.')}`);
 });
 
 // --- Recapitulatif mensuel ---
@@ -228,6 +229,13 @@ router.post('/informations', (req, res) => {
     if (err) {
       return res.redirect('/admin/informations?erreur=' + encodeURIComponent(err.message));
     }
+    // Le middleware CSRF global ignore les requetes multipart/form-data (le
+    // corps n'est pas encore parse a ce stade-la) : on verifie donc le jeton
+    // manuellement ici, une fois que multer l'a extrait dans req.body.
+    if (!verifieToken(req)) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(403).send('Session invalide ou expiree. Veuillez recharger la page et reessayer.');
+    }
     const contenu = (req.body.contenu || '').trim();
     if (!contenu) {
       if (req.file) fs.unlinkSync(req.file.path);
@@ -249,8 +257,11 @@ router.post('/informations/:id/supprimer', (req, res) => {
   const info = db.prepare('SELECT * FROM informations WHERE id = ?').get(req.params.id);
   if (info) {
     if (info.fichier) {
-      const fichierChemin = path.join(UPLOAD_DIR, info.fichier);
-      if (fs.existsSync(fichierChemin)) fs.unlinkSync(fichierChemin);
+      // path.basename() retire tout segment ../ ou / avant la jointure, pour
+      // empecher une traversee de repertoire meme si info.fichier etait corrompu.
+      const nomSecurise = path.basename(info.fichier);
+      const fichierChemin = path.join(UPLOAD_DIR, nomSecurise);
+      if (fichierChemin.startsWith(UPLOAD_DIR) && fs.existsSync(fichierChemin)) fs.unlinkSync(fichierChemin);
     }
     db.prepare('DELETE FROM informations WHERE id = ?').run(req.params.id);
   }

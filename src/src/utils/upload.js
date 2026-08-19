@@ -11,6 +11,14 @@ const EXTENSIONS_AUTORISEES = {
   audio: ['.mp3', '.wav', '.ogg', '.m4a', '.aac'],
 };
 
+// Extension choisie a partir du type MIME (liste blanche), jamais du nom de
+// fichier fourni par le client : file.originalname n'est pas fiable.
+const EXTENSION_PAR_TYPE = {
+  image: '.jpg',
+  video: '.mp4',
+  audio: '.mp3',
+};
+
 function typeMediaDepuisMime(mimetype) {
   if (mimetype.startsWith('image/')) return 'image';
   if (mimetype.startsWith('video/')) return 'video';
@@ -21,7 +29,8 @@ function typeMediaDepuisMime(mimetype) {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
+    const type = typeMediaDepuisMime(file.mimetype);
+    const ext = EXTENSION_PAR_TYPE[type] || '';
     const nomUnique = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
     cb(null, nomUnique);
   },
@@ -30,10 +39,6 @@ const storage = multer.diskStorage({
 function filtreFichier(req, file, cb) {
   const type = typeMediaDepuisMime(file.mimetype);
   if (!type) return cb(new Error('Type de fichier non autorise. Formats acceptes : image, video, audio.'));
-  const ext = path.extname(file.originalname).toLowerCase();
-  if (!EXTENSIONS_AUTORISEES[type].includes(ext)) {
-    return cb(new Error('Extension de fichier non autorisee pour ce type de media.'));
-  }
   cb(null, true);
 }
 

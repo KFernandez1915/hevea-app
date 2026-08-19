@@ -18,6 +18,7 @@
     <h2>1. Prix du kg du mois</h2>
     <p class="muted">Prix unique fixe par l'Etat, applique a tous les planteurs pour ce mois.</p>
     <form method="POST" action="/admin/mois/prix" style="display:flex; gap:10px; align-items:end;">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="hidden" name="periode" value="<%= periode %>">
       <div class="form-group" style="max-width:200px;">
         <label>Prix du kg (FCFA)</label>
@@ -31,6 +32,7 @@
     <h2>2. Enregistrer une pesee</h2>
     <p class="muted">Un planteur peut etre pese plusieurs fois dans le mois : les poids seront cumules automatiquement.</p>
     <form method="POST" action="/admin/mois/pesee">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="hidden" name="periode" value="<%= periode %>">
       <div class="form-row">
         <div class="form-group" style="flex:2;">
@@ -71,6 +73,7 @@
               <td data-label="Poids (kg)"><%= pz.poids_kg %></td>
               <td data-label="Actions">
                 <form class="inline" method="POST" action="/admin/pesees/<%= pz.id %>/supprimer" onsubmit="return confirm('Supprimer cette pesee ?');">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <button class="btn small red" type="submit">Supprimer</button>
                 </form>
               </td>

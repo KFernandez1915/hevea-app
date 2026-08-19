@@ -16,6 +16,7 @@
     <a href="/planteur/informations"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.5" r="0.9" fill="currentColor" stroke="none"/></svg> Informations<% if (typeof informationsNonLues !== 'undefined' && informationsNonLues > 0) { %><span class="nav-badge"><%= informationsNonLues > 9 ? '9+' : informationsNonLues %></span><% } %></a>
     <a href="/planteur/actualites"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h4"/></svg> Actualites</a>
     <form class="inline" method="POST" action="/planteur/deconnexion">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <a href="#" onclick="this.closest('form').submit(); return false;"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg> Déconnexion</a>
     </form>
   </nav>

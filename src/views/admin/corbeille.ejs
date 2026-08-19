@@ -26,9 +26,11 @@
             <td><%= p.supprime_le || '-' %></td>
             <td>
               <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/restaurer">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button class="btn small green" type="submit">Restaurer</button>
               </form>
               <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/supprimer-definitivement" onsubmit="return confirm('Supprimer definitivement ce planteur ? Son historique de pesees sera egalement efface. Cette action est irreversible.');">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button class="btn small red" type="submit">Supprimer definitivement</button>
               </form>
             </td>

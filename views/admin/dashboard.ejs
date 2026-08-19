@@ -93,7 +93,10 @@
 <script src="/js/vendor/chart.umd.min.js"></script>
 <script>
   (function () {
-    var pesees = <%- JSON.stringify(toutesLesPesees) %>;
+    // JSON.stringify seul ne suffit pas : si un champ contient "</script>",
+    // cela romprait hors de la balise <script> et permettrait une injection.
+    // On echappe donc "<" en "\u003c" avant insertion.
+    var pesees = <%- JSON.stringify(toutesLesPesees).replace(/</g, '\\u003c') %>;
     var palette = ['#205c2e', '#b9793f', '#2f7a3c', '#7a5230', '#4f9d4a', '#163d20', '#c99a5b', '#6c9e5c'];
 
     // Toutes les dates distinctes, triees, servent de graduation d'axe X commune.

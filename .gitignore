@@ -6,3 +6,8 @@ node_modules/
 .env
 public/uploads/informations/*
 !public/uploads/informations/.gitkeep
+
+# Exports de base de donnees (donnees personnelles + hashs de mots de passe) :
+# ne doivent jamais etre commites.
+backups/
+*.sql

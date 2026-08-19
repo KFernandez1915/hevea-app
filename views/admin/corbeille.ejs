@@ -33,9 +33,11 @@
             <td class="col-center" data-label="Actions">
               <div class="cell-actions">
                 <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/reactiver">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <button class="btn small green" type="submit">Restaurer</button>
                 </form>
                 <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/supprimer-definitivement" onsubmit="return confirm('Supprimer definitivement ce planteur ? Cette action est irreversible et n\'est possible que sil na aucune pesee enregistree.');">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <button class="btn small red" type="submit">Supprimer définitivement</button>
                 </form>
               </div>

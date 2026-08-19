@@ -9,6 +9,7 @@
 
   <div class="card">
     <form method="POST" action="<%= planteur ? '/admin/planteurs/' + planteur.id : '/admin/planteurs' %>">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-row">
         <div class="form-group">
           <label>Nom</label>

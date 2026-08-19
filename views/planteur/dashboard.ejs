@@ -92,6 +92,7 @@
       <div class="alert error">Vous utilisez encore un mot de passe temporaire. Merci de le modifier des maintenant.</div>
     <% } %>
     <form method="POST" action="/planteur/mot-de-passe">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-row">
         <div class="form-group">
           <label>Mot de passe actuel</label>
@@ -123,7 +124,10 @@
 <script src="/js/vendor/chart.umd.min.js"></script>
 <script>
   (function () {
-    var pesees = <%- JSON.stringify(mesPesees) %>;
+    // JSON.stringify seul ne suffit pas : si un champ contient "</script>",
+    // cela romprait hors de la balise <script> et permettrait une injection.
+    // On echappe donc "<" en "\u003c" avant insertion.
+    var pesees = <%- JSON.stringify(mesPesees).replace(/</g, '\\u003c') %>;
     var labels = pesees.map(function (p) {
       var parts = p.date_pesee.split('-');
       return parts.length === 3 ? (parts[2] + '/' + parts[1] + '/' + parts[0].slice(2)) : p.date_pesee;

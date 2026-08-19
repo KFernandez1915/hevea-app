@@ -13,6 +13,7 @@
 
   <div class="card">
     <form method="POST" action="/admin/informations" enctype="multipart/form-data">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-group">
         <label>Texte de l'information</label>
         <textarea name="contenu" required rows="4" placeholder="Ecrivez votre message aux planteurs..." style="width:100%; padding:8px 10px; border:1px solid #ccc; border-radius:8px; font-family:inherit;"></textarea>
@@ -39,6 +40,7 @@
         <% } %>
         <p class="muted" style="margin-top:8px; font-size:12px;">Publie par <%= info.auteur || 'Administrateur' %> le <%= info.cree_le %></p>
         <form method="POST" action="/admin/informations/<%= info.id %>/supprimer" onsubmit="return confirm('Supprimer cette information ?');" style="margin-top:8px;">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <button class="btn small red" type="submit">Supprimer</button>
         </form>
       </div>

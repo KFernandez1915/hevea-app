@@ -14,6 +14,7 @@
   <div class="card">
     <h2>Nouvelle information</h2>
     <form method="POST" action="/admin/informations" enctype="multipart/form-data">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-group">
         <label>Titre</label>
         <input type="text" name="titre" required placeholder="Ex: Prix du kg de Juillet, reunion mensuelle...">
@@ -60,6 +61,7 @@
         <% } %>
         <div class="actions-row" style="margin-top:14px;">
           <form class="inline" method="POST" action="/admin/informations/<%= info.id %>/supprimer" onsubmit="return confirm('Supprimer cette information ?');">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <button class="btn small red" type="submit">Supprimer</button>
           </form>
         </div>

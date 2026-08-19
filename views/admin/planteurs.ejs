@@ -53,6 +53,7 @@
               <div class="cell-actions">
                 <a class="btn small" href="/admin/planteurs/<%= p.id %>/modifier">Modifier</a>
                 <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/supprimer" onsubmit="return confirm('Deplacer ce planteur vers la corbeille ? Son historique sera conserve.');">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <button class="btn small red" type="submit">Supprimer</button>
                 </form>
               </div>

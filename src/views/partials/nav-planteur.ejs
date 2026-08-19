@@ -5,6 +5,7 @@
     <a href="/planteur/historique">Historique</a>
     <a href="/planteur/informations">Informations</a>
     <form class="inline" method="POST" action="/planteur/deconnexion">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <a href="#" onclick="this.closest('form').submit(); return false;">Deconnexion</a>
     </form>
   </nav>

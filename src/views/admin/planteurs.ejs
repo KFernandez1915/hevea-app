@@ -37,10 +37,12 @@
               <a class="btn small" href="/admin/planteurs/<%= p.id %>/modifier">Modifier</a>
               <% if (p.statut === 'actif') { %>
                 <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/supprimer" onsubmit="return confirm('Desactiver ce planteur ? Son historique sera conserve.');">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <button class="btn small red" type="submit">Supprimer</button>
                 </form>
               <% } else { %>
                 <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/reactiver">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <button class="btn small green" type="submit">Reactiver</button>
                 </form>
               <% } %>

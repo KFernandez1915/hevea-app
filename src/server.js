@@ -5,6 +5,7 @@ const path = require('path');
 
 require('./db'); // initialise la base de donnees et le compte admin par defaut
 const { formaterMontant, formaterPeriode } = require('./utils/helpers');
+const { csrfToken, csrfProtection } = require('./middleware/csrf');
 
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
@@ -20,12 +21,26 @@ app.locals.formaterPeriode = formaterPeriode;
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('SESSION_SECRET doit etre defini en production (voir .env.example).');
+}
+
 app.use(session({
+  name: 'hevea.sid',
   secret: process.env.SESSION_SECRET || 'change-moi-en-production',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 8 }, // 8h
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 1000 * 60 * 60 * 8, // 8h
+  },
 }));
+
+app.use(csrfToken);
+app.use(csrfProtection);
 
 app.get('/', (req, res) => {
   if (req.session.adminId) return res.redirect('/admin');

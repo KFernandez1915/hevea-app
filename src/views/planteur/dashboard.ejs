@@ -57,6 +57,7 @@
       <div class="alert error">Vous utilisez encore le mot de passe temporaire recu par SMS. Merci de le modifier.</div>
     <% } %>
     <form method="POST" action="/planteur/mot-de-passe">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-row">
         <div class="form-group">
           <label>Mot de passe actuel</label>

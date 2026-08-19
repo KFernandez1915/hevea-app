@@ -33,6 +33,7 @@
         <div class="alert error"><%= erreur %></div>
       <% } %>
       <form method="POST" action="/planteur/reinitialiser">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <input type="hidden" name="identifiant" value="<%= identifiant %>">
         <div class="form-group">
           <label>Identifiant</label>
