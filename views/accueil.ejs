@@ -1,10 +1,38 @@
 <%- include('partials/head', { titre: 'Gestion Planteurs Hevea' }) %>
-<div class="landing-wrap">
-  <img src="/Images/logo.png" alt="Logo Hevea" style="height:88px; margin-bottom:14px;">
-  <h1>Gestion Planteurs Hevea</h1>
-  <p class="subtitle">Pesée mensuelle, calcul automatique des montants</p>
-  <a class="btn green" href="/admin/connexion">Espace Administrateur</a>
-  <a class="btn grey" href="/planteur/connexion">Espace Planteur</a>
+<div class="auth-shell">
+  <div class="auth-panel-brand">
+    <svg class="tap-motif" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round">
+        <path d="M40 40 Q120 90 40 140 Q-40 190 40 240 Q120 290 40 340 Q-40 390 40 440"/>
+        <path d="M160 0 Q240 60 160 120 Q80 180 160 240 Q240 300 160 360 Q80 420 160 480"/>
+        <path d="M300 20 Q380 80 300 140 Q220 200 300 260 Q380 320 300 380 Q220 440 300 500"/>
+      </g>
+      <g fill="#ffffff">
+        <circle cx="40" cy="140" r="3"/>
+        <circle cx="160" cy="120" r="3"/>
+        <circle cx="300" cy="140" r="3"/>
+      </g>
+    </svg>
+    <div class="brand-mark">
+      <img src="/Images/logo.png" alt="Logo Hevea">
+      <span>Gestion Planteurs Hevea</span>
+    </div>
+    <div class="pitch">
+      <h2>La pesée mensuelle et les paiements de votre coopérative, sans fichier Excel.</h2>
+      <p>Prix du kg, poids collectés, montants dus : un espace administrateur et un portail planteur, connectés en temps réel.</p>
+    </div>
+    <div class="pitch-foot">Choisissez votre espace pour continuer.</div>
+  </div>
+
+  <div class="auth-panel-form">
+    <div class="landing-wrap">
+      <img src="/Images/logo.png" alt="Logo Hevea" style="height:64px; margin-bottom:12px;">
+      <h1>Bienvenue</h1>
+      <p class="subtitle">Choisissez votre espace de connexion</p>
+      <a class="btn green" href="/admin/connexion">Espace Administrateur</a>
+      <a class="btn grey" href="/planteur/connexion">Espace Planteur</a>
+    </div>
+  </div>
 </div>
 </body>
 </html>

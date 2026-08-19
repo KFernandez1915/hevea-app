@@ -13,6 +13,19 @@ function genererCodeReinitialisation() {
   return String(crypto.randomInt(100000, 1000000));
 }
 
+// Mot de passe temporaire genere cote serveur (utilise pour "mot de passe oublie",
+// affiche une seule fois a l'ecran). Alphabet volontairement sans caracteres
+// ambigus (0/O, 1/l/I) pour rester lisible, avec suffisamment d'entropie
+// (10 caracteres sur un alphabet de 32 ~ 50 bits) et genere via crypto (sur).
+function genererMotDePasseTemporaireSecurise() {
+  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let mdp = '';
+  for (let i = 0; i < 10; i++) {
+    mdp += alphabet[crypto.randomInt(0, alphabet.length)];
+  }
+  return mdp;
+}
+
 function genererIdentifiant(nom, prenoms, existants) {
   const base = (prenoms[0] + nom).toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -47,6 +60,7 @@ function periodeCourante() {
 module.exports = {
   genererMotDePasseTemporaire,
   genererCodeReinitialisation,
+  genererMotDePasseTemporaireSecurise,
   genererIdentifiant,
   formaterMontant,
   formaterPeriode,

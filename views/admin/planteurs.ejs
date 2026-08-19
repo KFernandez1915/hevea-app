@@ -13,13 +13,16 @@
         <input type="text" class="search-input" name="q" placeholder="Rechercher un planteur..." value="<%= q %>">
         <button class="btn grey" type="submit">Rechercher</button>
       </form>
-      <a class="btn green" href="/admin/planteurs/nouveau">+ Nouveau planteur</a>
+      <div class="actions-row">
+        <a class="btn grey" href="/admin/corbeille">Corbeille<% if (nbCorbeille > 0) { %><span class="nav-badge" style="background:var(--muted);"><%= nbCorbeille %></span><% } %></a>
+        <a class="btn green" href="/admin/planteurs/nouveau">+ Nouveau planteur</a>
+      </div>
     </div>
   </div>
 
   <div class="card">
     <div class="table-responsive">
-    <table>
+    <table class="table-cards-mobile">
       <thead>
         <tr>
           <th class="col-center col-num">N°</th>
@@ -28,7 +31,6 @@
           <th>Identifiant</th>
           <th class="col-center">Moyen de paiement</th>
           <th class="col-center">N° de paiement</th>
-          <th class="col-center">Statut</th>
           <th class="col-center">Actions</th>
         </tr>
       </thead>
@@ -36,36 +38,29 @@
         <% planteurs.forEach(function(p, index) { %>
           <% var initiales = (p.nom ? p.nom.charAt(0) : '') + (p.prenoms ? p.prenoms.charAt(0) : ''); %>
           <tr>
-            <td class="col-center"><%= index + 1 %></td>
-            <td>
+            <td class="col-center" data-label="N°"><%= index + 1 %></td>
+            <td data-label="Planteur">
               <div class="avatar-name">
                 <span class="avatar-circle"><%= initiales %></span>
                 <span><%= p.nom %> <%= p.prenoms %></span>
               </div>
             </td>
-            <td><%= p.contact || '-' %></td>
-            <td><%= p.identifiant %></td>
-            <td class="col-center"><% if (p.moyen_paiement) { %><span class="pay-pill"><%= p.moyen_paiement %></span><% } else { %><span class="muted">-</span><% } %></td>
-            <td class="col-center"><span class="pay-number"><%= p.contact_paiement || '-' %></span></td>
-            <td class="col-center"><span class="badge <%= p.statut %>"><%= p.statut %></span></td>
-            <td class="col-center">
+            <td data-label="Contact"><%= p.contact || '-' %></td>
+            <td data-label="Identifiant"><%= p.identifiant %></td>
+            <td class="col-center" data-label="Moyen de paiement"><% if (p.moyen_paiement) { %><span class="pay-pill"><%= p.moyen_paiement %></span><% } else { %><span class="muted">-</span><% } %></td>
+            <td class="col-center" data-label="N° de paiement"><span class="pay-number"><%= p.contact_paiement || '-' %></span></td>
+            <td class="col-center" data-label="Actions">
               <div class="cell-actions">
                 <a class="btn small" href="/admin/planteurs/<%= p.id %>/modifier">Modifier</a>
-                <% if (p.statut === 'actif') { %>
-                  <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/supprimer" onsubmit="return confirm('Desactiver ce planteur ? Son historique sera conserve.');">
-                    <button class="btn small red" type="submit">Supprimer</button>
-                  </form>
-                <% } else { %>
-                  <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/reactiver">
-                    <button class="btn small green" type="submit">Reactiver</button>
-                  </form>
-                <% } %>
+                <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/supprimer" onsubmit="return confirm('Deplacer ce planteur vers la corbeille ? Son historique sera conserve.');">
+                  <button class="btn small red" type="submit">Supprimer</button>
+                </form>
               </div>
             </td>
           </tr>
         <% }); %>
         <% if (planteurs.length === 0) { %>
-          <tr><td colspan="8" class="muted">Aucun planteur trouve.</td></tr>
+          <tr><td colspan="7"><div class="empty-state-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Aucun planteur trouve.</div></td></tr>
         <% } %>
       </tbody>
     </table>

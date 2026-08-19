@@ -1,0 +1,32 @@
+<div class="info-ticker" id="info-ticker">
+  <span class="info-ticker-badge">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.5" r="0.9" fill="currentColor" stroke="none"/></svg>
+    Infos
+  </span>
+  <div class="info-ticker-viewport">
+    <% informations.forEach(function(info, idx) { %>
+      <div class="info-ticker-slide<%= idx === 0 ? ' active' : '' %>">
+        <% if (info.fichier_type === 'image') { %>
+          <div class="info-ticker-media">
+            <img src="/uploads/informations/<%= info.fichier_nom %>" alt="">
+          </div>
+          <div class="info-ticker-text-wrap">
+            <div class="info-ticker-text"><strong><%= info.titre %></strong><% if (info.contenu) { %> — <%= info.contenu.replace(/\n/g, ' ') %><% } %></div>
+          </div>
+        <% } else if (info.fichier_type === 'video') { %>
+          <div class="info-ticker-media">
+            <video src="/uploads/informations/<%= info.fichier_nom %>" muted autoplay loop playsinline></video>
+          </div>
+          <div class="info-ticker-text-wrap static">
+            <div class="info-ticker-text-static"><strong><%= info.titre %></strong></div>
+          </div>
+        <% } else { %>
+          <div class="info-ticker-text-wrap">
+            <div class="info-ticker-text"><strong><%= info.titre %></strong><% if (info.contenu) { %> — <%= info.contenu.replace(/\n/g, ' ') %><% } %></div>
+          </div>
+        <% } %>
+      </div>
+    <% }); %>
+  </div>
+  <a href="/planteur/informations" class="info-ticker-link">Voir tout →</a>
+</div>

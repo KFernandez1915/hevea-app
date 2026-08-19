@@ -10,6 +10,13 @@
   <% if (typeof message !== 'undefined' && message === 'mdp_modifie') { %>
     <div class="alert info">Mot de passe modifie avec succes.</div>
   <% } %>
+  <% if (typeof message !== 'undefined' && message === 'changement_requis') { %>
+    <div class="alert error">Pour votre securite, vous devez definir un nouveau mot de passe avant de continuer.</div>
+  <% } %>
+
+  <% if (informationsRecentes && informationsRecentes.length > 0) { %>
+    <%- include('../partials/info-ticker', { informations: informationsRecentes }) %>
+  <% } %>
 
   <div class="grid-stats">
     <div class="stat">
@@ -38,17 +45,28 @@
   <div class="card">
     <h2>Mes pesees du mois (<%= recap.nbPesees %>)</h2>
     <% if (recap.pesees.length === 0) { %>
-      <p class="muted">Aucune pesee enregistree pour ce mois pour le moment.</p>
+      <%- include('../partials/empty-state', { titre: 'Aucune pesee ce mois-ci', texte: 'Revenez apres votre prochaine livraison au village.' }) %>
     <% } else { %>
       <div class="table-responsive">
       <table>
         <thead><tr><th>Date</th><th>Poids (kg)</th></tr></thead>
         <tbody>
           <% recap.pesees.forEach(function(pz) { %>
-            <tr><td><%= pz.date_pesee %></td><td><%= pz.poids_kg %></td></tr>
+            <tr><td data-label="Date"><%= pz.date_pesee %></td><td data-label="Poids (kg)"><%= pz.poids_kg %></td></tr>
           <% }); %>
         </tbody>
       </table>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h2>Evolution de mon poids a chaque pesee</h2>
+    <% if (mesPesees.length === 0) { %>
+      <%- include('../partials/empty-state', { titre: 'Aucune pesee pour le moment', texte: 'Votre historique de pesees apparaitra ici.' }) %>
+    <% } else { %>
+      <div class="chart-wrap">
+        <canvas id="chartMesPesees"></canvas>
       </div>
     <% } %>
   </div>
@@ -71,7 +89,7 @@
   <div class="card">
     <h2>Changer mon mot de passe</h2>
     <% if (planteur.mot_de_passe_temporaire) { %>
-      <div class="alert error">Vous utilisez encore le mot de passe temporaire recu par SMS. Merci de le modifier.</div>
+      <div class="alert error">Vous utilisez encore un mot de passe temporaire. Merci de le modifier des maintenant.</div>
     <% } %>
     <form method="POST" action="/planteur/mot-de-passe">
       <div class="form-row">
@@ -100,5 +118,50 @@
     </form>
   </div>
 </div>
+
+<% if (mesPesees.length > 0) { %>
+<script src="/js/vendor/chart.umd.min.js"></script>
+<script>
+  (function () {
+    var pesees = <%- JSON.stringify(mesPesees) %>;
+    var labels = pesees.map(function (p) {
+      var parts = p.date_pesee.split('-');
+      return parts.length === 3 ? (parts[2] + '/' + parts[1] + '/' + parts[0].slice(2)) : p.date_pesee;
+    });
+    var valeurs = pesees.map(function (p) { return p.poids_kg; });
+
+    new Chart(document.getElementById('chartMesPesees'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Poids (kg)',
+          data: valeurs,
+          borderColor: '#205c2e',
+          backgroundColor: 'rgba(32, 92, 46, 0.12)',
+          fill: true,
+          tension: 0.25,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#205c2e',
+          borderWidth: 2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function (ctx) { return ctx.parsed.y + ' kg'; } } },
+        },
+        scales: {
+          y: { title: { display: true, text: 'Poids (kg)' }, beginAtZero: true },
+          x: { title: { display: true, text: 'Date de pesee' } },
+        },
+      },
+    });
+  })();
+</script>
+<% } %>
 </body>
 </html>

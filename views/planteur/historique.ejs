@@ -3,8 +3,12 @@
 <div class="container">
   <h1>Mon historique</h1>
 
+  <% if (typeof mdpTemporaire !== 'undefined' && mdpTemporaire) { %>
+    <div class="alert error">Vous utilisez encore un mot de passe temporaire. <a href="/planteur">Modifiez-le des maintenant</a>.</div>
+  <% } %>
+
   <% if (historique.length === 0) { %>
-    <div class="card"><p class="muted">Aucun historique disponible pour le moment.</p></div>
+    <div class="card"><%- include('../partials/empty-state', { titre: 'Aucun historique disponible', texte: 'Vos mois precedents apparaitront ici des qu\'une pesee sera enregistree.' }) %></div>
   <% } else { %>
     <div class="card">
       <div class="table-responsive">
@@ -13,10 +17,10 @@
         <tbody>
           <% historique.forEach(function(h) { %>
             <tr>
-              <td><%= formaterPeriode(h.periode) %></td>
-              <td><%= h.prixKg ? formaterMontant(h.prixKg) : 'Non defini' %></td>
-              <td><%= h.poidsTotal.toFixed(1) %></td>
-              <td><%= formaterMontant(h.montant) %></td>
+              <td data-label="Mois"><%= formaterPeriode(h.periode) %></td>
+              <td data-label="Prix du kg"><%= h.prixKg ? formaterMontant(h.prixKg) : 'Non defini' %></td>
+              <td data-label="Poids total (kg)"><%= h.poidsTotal.toFixed(1) %></td>
+              <td data-label="Montant"><%= formaterMontant(h.montant) %></td>
             </tr>
           <% }); %>
         </tbody>

@@ -4,16 +4,17 @@
   <h1>Informations</h1>
   <p class="muted" style="margin-bottom:20px;">Annonces et messages publies par l'association.</p>
 
+  <% if (typeof mdpTemporaire !== 'undefined' && mdpTemporaire) { %>
+    <div class="alert error">Vous utilisez encore un mot de passe temporaire. <a href="/planteur">Modifiez-le des maintenant</a>.</div>
+  <% } %>
+
   <% if (informations.length === 0) { %>
-    <div class="card empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.5" r="0.9" fill="currentColor" stroke="none"/></svg>
-      <p>Aucune information publiee pour le moment.</p>
-    </div>
+    <div class="card"><%- include('../partials/empty-state', { titre: 'Aucune information publiee', texte: 'Les annonces de la cooperative s\'afficheront ici des qu\'elles seront publiees.' }) %></div>
   <% } else { %>
     <% informations.forEach(function(info) { %>
       <div class="info-post">
         <div class="info-post-head">
-          <h3><%= info.titre %></h3>
+          <h3><%= info.titre %><% if (info.estNouveau) { %> <span class="badge actif" style="margin-left:6px;">Nouveau</span><% } %></h3>
           <span class="info-post-date"><%= new Date(info.cree_le.replace(' ', 'T') + 'Z').toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></span>
         </div>
         <% if (info.contenu) { %>

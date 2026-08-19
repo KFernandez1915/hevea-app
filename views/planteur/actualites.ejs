@@ -1,47 +1,28 @@
-<%- include('../partials/head', { titre: 'Actualites' }) %>
+<%- include('../partials/head', { titre: 'Actualites Hevea' }) %>
 <%- include('../partials/nav-planteur') %>
 <div class="container">
   <h1>Actualites Hevea</h1>
-  <p class="muted" style="margin-bottom:20px;">Fil d'actualites du caoutchouc en Cote d'Ivoire et en Afrique, et publications de l'association.</p>
+  <p class="muted" style="margin-bottom:20px;">Ce qui se passe dans la filiere hevea en Cote d'Ivoire et en Afrique.</p>
 
-  <% if (actualites.length === 0) { %>
-    <div class="card empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Z"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>
-      <p>Aucune actualite disponible pour le moment.</p>
-    </div>
-  <% } else { %>
-    <% actualites.forEach(function(actu) { %>
-      <div class="info-post actu-post">
-        <div class="info-post-head">
-          <div class="actu-meta">
-            <% if (actu.origine === 'manuelle') { %>
-              <span class="badge actif">Association</span>
-            <% } else { %>
-              <span class="badge"><%= actu.source %></span>
-            <% } %>
-            <span class="info-post-date">
-              <% if (actu.dateVal) { %>
-                <%= new Date(actu.dateVal).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
-              <% } %>
-            </span>
+  <div class="card">
+    <% if (erreurChargement) { %>
+      <p class="muted"><%= erreurChargement %></p>
+    <% } else if (actualites.length === 0) { %>
+      <%- include('../partials/empty-state', { titre: 'Aucune actualite disponible', texte: 'Les dernieres actualites de la cooperative s\'afficheront ici.' }) %>
+    <% } else { %>
+      <% actualites.forEach(function(a) { %>
+        <div class="news-item">
+          <div class="news-item-head">
+            <span class="news-item-source"><%= a.source %></span>
+            <% if (a.date) { %><span class="news-item-date"><%= new Date(a.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) %></span><% } %>
           </div>
+          <h3><%= a.titre %></h3>
+          <% if (a.resume) { %><p class="news-item-resume"><%= a.resume %></p><% } %>
+          <% if (a.lien) { %><a class="news-item-link" href="<%= a.lien %>" target="_blank" rel="noopener noreferrer">Lire l'article complet →</a><% } %>
         </div>
-        <h3 style="margin:6px 0;">
-          <% if (actu.lien) { %>
-            <a href="<%= actu.lien %>" target="_blank" rel="noopener noreferrer"><%= actu.titre %></a>
-          <% } else { %>
-            <%= actu.titre %>
-          <% } %>
-        </h3>
-        <% if (actu.description) { %>
-          <div class="info-post-body"><%= actu.description %></div>
-        <% } %>
-        <% if (actu.lien) { %>
-          <a class="btn small grey" href="<%= actu.lien %>" target="_blank" rel="noopener noreferrer">Lire l'article</a>
-        <% } %>
-      </div>
-    <% }); %>
-  <% } %>
+      <% }); %>
+    <% } %>
+  </div>
 </div>
 </body>
 </html>

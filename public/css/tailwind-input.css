@@ -1,0 +1,32 @@
+/* ==========================================================
+   Source Tailwind CSS v4 — theme + utilitaires uniquement.
+   On importe volontairement SANS preflight.css (le reset global
+   de Tailwind) pour ne pas entrer en conflit avec le design
+   system existant de public/css/style.css (boutons, formulaires,
+   typographie deja definis). On beneficie donc uniquement des
+   classes utilitaires (spacing, flex/grid, ombres, etc.) pour
+   des ajustements ponctuels et propres dans les vues.
+
+   Ce fichier est compile vers public/css/tailwind.css par :
+     npx tailwindcss -i public/css/tailwind-input.css -o public/css/tailwind.css --minify
+   (lance automatiquement via le script npm "build:css", branche
+   sur "postinstall" — voir package.json)
+   ========================================================== */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Les vues EJS a scanner pour la detection des classes utilisees */
+@source "../../views/**/*.ejs";
+@source "../../public/js/**/*.js";
+
+@theme {
+  /* Reprend la palette de marque existante (vert foret + or recolte)
+     pour que les utilitaires Tailwind (bg-forest, text-forest, etc.)
+     restent coherents avec le reste de l'application. */
+  --color-forest: #163d20;
+  --color-forest-dark: #0f2a16;
+  --color-leaf: #4f9d4a;
+  --color-leaf-light: #e8f3e6;
+  --color-gold: #c99a3e;
+  --color-cream: #faf8f3;
+}

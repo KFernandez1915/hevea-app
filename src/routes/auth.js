@@ -1,14 +1,15 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
-const { genererCodeReinitialisation } = require('../utils/helpers');
-const { envoyerCodeReinitialisationParSms } = require('../utils/sms');
+const { genererMotDePasseTemporaireSecurise } = require('../utils/helpers');
+const { limiterParIp } = require('../utils/rateLimit');
 
 const router = express.Router();
 
-const RESET_CODE_TTL_MS = 15 * 60 * 1000;   // duree de validite du code : 15 minutes
-const RESET_MIN_INTERVAL_MS = 60 * 1000;    // delai minimum entre deux demandes : 60 secondes
-const RESET_MAX_TENTATIVES = 5;             // nombre d'essais autorises avant blocage du code
+const MDP_TEMP_TTL_MS = 15 * 60 * 1000;     // duree de validite du mot de passe temporaire pour se connecter : 15 minutes
+const RESET_MIN_INTERVAL_MS = 30 * 1000;    // delai minimum entre deux demandes reussies : 30 secondes
+const RESET_MAX_TENTATIVES = 5;             // essais infructueux avant verrouillage temporaire du compte
+const RESET_LOCKOUT_MS = 15 * 60 * 1000;    // duree du verrouillage apres trop d'essais infructueux
 
 // --- Admin ---
 router.get('/admin/connexion', (req, res) => {
@@ -32,14 +33,30 @@ router.post('/admin/deconnexion', (req, res) => {
 
 // --- Planteur ---
 router.get('/planteur/connexion', (req, res) => {
-  res.render('login-planteur', { erreur: null, message: req.query.message || null });
+  res.render('login-planteur', { erreur: req.query.erreur || null, message: req.query.message || null });
 });
 
 router.post('/planteur/connexion', (req, res) => {
   const { identifiant, mot_de_passe } = req.body;
-  const planteur = db.prepare('SELECT * FROM planteurs WHERE identifiant = ? AND statut = ?').get(identifiant, 'actif');
+  const MESSAGE_COMPTE_BLOQUE = 'Votre session est inactive, veuillez contacter l\'administrateur.';
+
+  const planteur = db.prepare('SELECT * FROM planteurs WHERE identifiant = ?').get(identifiant);
   if (!planteur || !bcrypt.compareSync(mot_de_passe || '', planteur.mot_de_passe_hash)) {
     return res.render('login-planteur', { erreur: 'Identifiant ou mot de passe incorrect.' });
+  }
+  // Le compte existe et le mot de passe est correct, mais le planteur a ete
+  // supprime (deplace vers la corbeille) entre-temps : on l'informe clairement
+  // au lieu d'un message generique qui laisserait croire a une erreur de saisie.
+  if (planteur.statut !== 'actif') {
+    return res.render('login-planteur', { erreur: MESSAGE_COMPTE_BLOQUE });
+  }
+  // Un mot de passe temporaire (genere via "mot de passe oublie") n'est valable
+  // que pendant une duree limitee : au-dela, meme s'il est correct, on refuse
+  // la connexion et on invite a en redemander un nouveau.
+  if (planteur.mot_de_passe_temporaire && planteur.mdp_temp_expire_le) {
+    if (new Date(planteur.mdp_temp_expire_le).getTime() < Date.now()) {
+      return res.render('login-planteur', { erreur: 'Ce mot de passe temporaire a expire. Merci d\'en redemander un nouveau.' });
+    }
   }
   req.session.planteurId = planteur.id;
   req.session.planteurNom = `${planteur.nom} ${planteur.prenoms}`;
@@ -51,104 +68,86 @@ router.post('/planteur/deconnexion', (req, res) => {
 });
 
 // --- Mot de passe oublie (planteur) ---
-// Etape 1 : le planteur indique son identifiant. Un code a 6 chiffres est
-// genere, hache (jamais stocke en clair) et envoye par SMS au contact
-// deja enregistre en base (jamais a un numero fourni par le formulaire,
-// pour empecher un tiers de detourner le compte). La reponse est
-// volontairement identique que le compte existe ou non, afin de ne pas
-// permettre a un attaquant de deviner quels identifiants sont valides.
+// Le planteur s'identifie avec son identifiant ET le numero de telephone deja
+// enregistre sur son compte (connu uniquement de lui et de l'association) :
+// c'est la verification qui remplace l'envoi d'un code par SMS. En cas de
+// correspondance, un mot de passe temporaire est genere cote serveur et
+// affiche UNE SEULE FOIS a l'ecran (jamais stocke en clair, jamais transmis
+// par un autre canal) : le planteur doit le noter immediatement, il n'est
+// visible que 30 secondes puis se masque automatiquement. Ce mot de passe
+// n'est valable que 15 minutes pour se connecter, et un changement definitif
+// est exige des la premiere connexion.
 router.get('/planteur/mot-de-passe-oublie', (req, res) => {
   res.render('planteur/mot-de-passe-oublie', { erreur: null });
 });
 
-router.post('/planteur/mot-de-passe-oublie', async (req, res) => {
-  const identifiant = (req.body.identifiant || '').trim();
+router.post('/planteur/mot-de-passe-oublie', (req, res) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  const { bloque } = limiterParIp('mdp-oublie', ip, 20, 15 * 60 * 1000);
+  if (bloque) {
+    return res.render('planteur/mot-de-passe-oublie', {
+      erreur: 'Trop de tentatives depuis cet appareil. Merci de reessayer dans quelques minutes.',
+    });
+  }
 
-  if (!identifiant) {
-    return res.render('planteur/mot-de-passe-oublie', { erreur: 'Veuillez saisir votre identifiant.' });
+  const identifiant = (req.body.identifiant || '').trim();
+  const telephoneSaisi = (req.body.telephone || '').replace(/\D/g, '');
+  const erreurGenerique = 'Identifiant ou numero de telephone incorrect.';
+
+  if (!identifiant || !telephoneSaisi) {
+    return res.render('planteur/mot-de-passe-oublie', { erreur: 'Veuillez remplir tous les champs.' });
   }
 
   const planteur = db.prepare("SELECT * FROM planteurs WHERE identifiant = ? AND statut = 'actif'").get(identifiant);
+  const maintenant = Date.now();
 
-  if (planteur) {
-    const maintenant = Date.now();
-    const derniereDemande = planteur.reset_demande_le ? new Date(planteur.reset_demande_le).getTime() : 0;
-
-    if (maintenant - derniereDemande > RESET_MIN_INTERVAL_MS) {
-      const code = genererCodeReinitialisation();
-      const codeHash = bcrypt.hashSync(code, 10);
-      const expireLe = new Date(maintenant + RESET_CODE_TTL_MS).toISOString();
-
-      db.prepare(`
-        UPDATE planteurs
-        SET reset_code_hash = ?, reset_expire_le = ?, reset_tentatives = 0, reset_demande_le = ?
-        WHERE id = ?
-      `).run(codeHash, expireLe, new Date(maintenant).toISOString(), planteur.id);
-
-      if (planteur.contact) {
-        await envoyerCodeReinitialisationParSms(planteur.contact, code);
-      }
+  // Verrouillage temporaire du compte apres trop d'essais infructueux.
+  if (planteur && planteur.reset_tentatives >= RESET_MAX_TENTATIVES && planteur.reset_demande_le) {
+    const depuisDernierEchec = maintenant - new Date(planteur.reset_demande_le).getTime();
+    if (depuisDernierEchec < RESET_LOCKOUT_MS) {
+      return res.render('planteur/mot-de-passe-oublie', { erreur: erreurGenerique });
     }
-    // Si une demande recente existe deja, on ne renvoie pas de nouveau code
-    // (protection anti-spam) mais on affiche la meme redirection.
+    // Le verrou expire : on remet le compteur a zero pour retenter la verification.
+    db.prepare('UPDATE planteurs SET reset_tentatives = 0 WHERE id = ?').run(planteur.id);
+    planteur.reset_tentatives = 0;
   }
 
-  res.redirect(`/planteur/reinitialiser?identifiant=${encodeURIComponent(identifiant)}`);
-});
+  const telephoneEnregistre = planteur && planteur.contact ? planteur.contact.replace(/\D/g, '') : null;
+  const correspond = planteur && telephoneEnregistre && telephoneEnregistre.length >= 6 && telephoneEnregistre === telephoneSaisi;
 
-// Etape 2 : saisie du code recu par SMS + nouveau mot de passe.
-router.get('/planteur/reinitialiser', (req, res) => {
-  res.render('planteur/reinitialiser', { identifiant: req.query.identifiant || '', erreur: null, message: null });
-});
-
-router.post('/planteur/reinitialiser', (req, res) => {
-  const identifiant = (req.body.identifiant || '').trim();
-  const code = (req.body.code || '').trim();
-  const nouveauMotDePasse = req.body.nouveau_mot_de_passe || '';
-  const confirmation = req.body.confirmation_mot_de_passe || '';
-
-  const erreurGenerique = 'Code invalide ou expire. Merci de redemander un nouveau code.';
-
-  if (!code || !nouveauMotDePasse || !confirmation) {
-    return res.render('planteur/reinitialiser', { identifiant, erreur: 'Veuillez remplir tous les champs.', message: null });
-  }
-  if (nouveauMotDePasse.length < 6) {
-    return res.render('planteur/reinitialiser', { identifiant, erreur: 'Le nouveau mot de passe doit contenir au moins 6 caracteres.', message: null });
-  }
-  if (nouveauMotDePasse !== confirmation) {
-    return res.render('planteur/reinitialiser', { identifiant, erreur: 'Les deux mots de passe ne correspondent pas.', message: null });
+  if (!correspond) {
+    if (planteur) {
+      db.prepare('UPDATE planteurs SET reset_tentatives = reset_tentatives + 1, reset_demande_le = ? WHERE id = ?')
+        .run(new Date(maintenant).toISOString(), planteur.id);
+    }
+    return res.render('planteur/mot-de-passe-oublie', { erreur: erreurGenerique });
   }
 
-  const planteur = db.prepare("SELECT * FROM planteurs WHERE identifiant = ? AND statut = 'actif'").get(identifiant);
-
-  if (!planteur || !planteur.reset_code_hash || !planteur.reset_expire_le) {
-    return res.render('planteur/reinitialiser', { identifiant, erreur: erreurGenerique, message: null });
-  }
-  if (new Date(planteur.reset_expire_le).getTime() < Date.now()) {
-    db.prepare('UPDATE planteurs SET reset_code_hash = NULL, reset_expire_le = NULL WHERE id = ?').run(planteur.id);
-    return res.render('planteur/reinitialiser', { identifiant, erreur: erreurGenerique, message: null });
-  }
-  if (planteur.reset_tentatives >= RESET_MAX_TENTATIVES) {
-    db.prepare('UPDATE planteurs SET reset_code_hash = NULL, reset_expire_le = NULL WHERE id = ?').run(planteur.id);
-    return res.render('planteur/reinitialiser', { identifiant, erreur: 'Trop de tentatives. Merci de redemander un nouveau code.', message: null });
+  // Anti-spam : eviter de regenerer un mot de passe a chaque clic repete.
+  const derniereReussite = planteur.reset_demande_le ? new Date(planteur.reset_demande_le).getTime() : 0;
+  if (planteur.reset_tentatives === 0 && maintenant - derniereReussite < RESET_MIN_INTERVAL_MS) {
+    return res.render('planteur/mot-de-passe-oublie', {
+      erreur: 'Une demande vient deja d\'etre traitee. Merci de patienter quelques secondes avant de reessayer.',
+    });
   }
 
-  if (!bcrypt.compareSync(code, planteur.reset_code_hash)) {
-    db.prepare('UPDATE planteurs SET reset_tentatives = reset_tentatives + 1 WHERE id = ?').run(planteur.id);
-    return res.render('planteur/reinitialiser', { identifiant, erreur: erreurGenerique, message: null });
-  }
+  const motDePasseTemporaire = genererMotDePasseTemporaireSecurise();
+  const hash = bcrypt.hashSync(motDePasseTemporaire, 10);
+  const expireLe = new Date(maintenant + MDP_TEMP_TTL_MS).toISOString();
 
-  // Code valide : on met a jour le mot de passe et on invalide immediatement le code
-  // (usage unique) pour qu'il ne puisse pas etre rejoue.
-  const nouveauHash = bcrypt.hashSync(nouveauMotDePasse, 10);
   db.prepare(`
     UPDATE planteurs
-    SET mot_de_passe_hash = ?, mot_de_passe_temporaire = 0,
-        reset_code_hash = NULL, reset_expire_le = NULL, reset_tentatives = 0, reset_demande_le = NULL
+    SET mot_de_passe_hash = ?, mot_de_passe_temporaire = 1, mdp_temp_expire_le = ?,
+        reset_tentatives = 0, reset_demande_le = ?
     WHERE id = ?
-  `).run(nouveauHash, planteur.id);
+  `).run(hash, expireLe, new Date(maintenant).toISOString(), planteur.id);
 
-  res.redirect('/planteur/connexion?message=' + encodeURIComponent('Mot de passe reinitialise. Vous pouvez vous connecter.'));
+  res.render('planteur/mot-de-passe-genere', {
+    identifiant: planteur.identifiant,
+    motDePasseTemporaire,
+    dureeAffichageSecondes: 30,
+    dureeValiditeMinutes: 15,
+  });
 });
 
 module.exports = router;

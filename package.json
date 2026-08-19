@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "seed": "node src/seed.js"
+    "seed": "node src/seed.js",
+    "reset-admin": "node src/reset-admin-password.js",
+    "build:css": "tailwindcss -i public/css/tailwind-input.css -o public/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i public/css/tailwind-input.css -o public/css/tailwind.css --watch",
+    "postinstall": "node scripts/copy-chartjs.js && npm run build:css"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^8.1.0",
@@ -14,14 +18,17 @@
     "@capacitor/cli": "^8.4.2",
     "@capacitor/core": "^8.4.2",
     "bcryptjs": "^2.4.3",
+    "chart.js": "^4.5.1",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "exceljs": "^4.4.0",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
-    "fast-xml-parser": "^5.10.1",
     "multer": "^2.2.0",
-    "pdfkit": "^0.15.0"
+    "pdfkit": "^0.15.0",
+    "rss-parser": "^3.13.0",
+    "tailwindcss": "^4.3.3",
+    "@tailwindcss/cli": "^4.3.3"
   },
   "engines": {
     "node": ">=22.5.0"

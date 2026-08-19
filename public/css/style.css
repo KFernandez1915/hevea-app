@@ -132,6 +132,7 @@ h2 { font-size: 17px; font-weight: 600; margin-bottom: 14px; }
   padding: 20px 24px;
   margin-bottom: 20px;
   box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 /* ---------- Stat cards ---------- */
@@ -150,6 +151,17 @@ h2 { font-size: 17px; font-weight: 600; margin-bottom: 14px; }
   display: flex;
   align-items: flex-start;
   gap: 12px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+.stat:hover, .card:hover {
+  box-shadow: 0 10px 24px -14px rgba(22, 61, 32, 0.35);
+  transform: translateY(-2px);
+}
+.stat .stat-icon {
+  transition: transform 0.25s ease;
+}
+.stat:hover .stat-icon {
+  transform: scale(1.08);
 }
 .stat .stat-icon {
   flex: 0 0 auto;
@@ -190,7 +202,8 @@ table {
   border-radius: var(--radius);
   overflow: hidden;
 }
-th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); }
+th:last-child, td:last-child { border-right: none; }
 th {
   background: var(--forest-dark);
   color: #fff;
@@ -248,6 +261,23 @@ form.inline { display: inline; }
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .form-group input:focus, .form-group select:focus {
+  outline: none;
+  border-color: var(--forest);
+  box-shadow: 0 0 0 3px var(--leaf-light);
+}
+.form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--paper);
+  resize: vertical;
+  line-height: 1.5;
+}
+.form-group textarea:focus {
   outline: none;
   border-color: var(--forest);
   box-shadow: 0 0 0 3px var(--leaf-light);
@@ -374,6 +404,10 @@ form.inline { display: inline; }
   line-height: 1.6;
   white-space: pre-wrap;
   margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  background: var(--cream);
 }
 .info-media { margin-top: 10px; }
 .info-media img {
@@ -404,28 +438,288 @@ form.inline { display: inline; }
 }
 .file-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
 
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--muted);
-}
-.empty-state svg { width: 40px; height: 40px; margin-bottom: 10px; opacity: 0.5; }
+/* Regle .empty-state complete : voir bloc "Etats vides" plus bas */
 
-/* ---------- Actualites (fil RSS + publications) ---------- */
-.actu-meta {
+/* ---------- Mot de passe temporaire (reveal + auto-masquage) ---------- */
+.temp-pwd-box {
+  position: relative;
+  background: var(--forest-dark);
+  border-radius: var(--radius);
+  padding: 22px 16px;
+  text-align: center;
+  overflow: hidden;
+}
+.temp-pwd-value {
+  font-family: 'Sora', monospace;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #fff;
+  word-break: break-all;
+}
+.temp-pwd-hidden-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--forest-dark);
+  color: rgba(255,255,255,0.75);
+  font-size: 13px;
+}
+.temp-pwd-hidden-overlay svg { width: 26px; height: 26px; }
+.temp-pwd-box.masque .temp-pwd-value { visibility: hidden; }
+.temp-pwd-box.masque .temp-pwd-hidden-overlay { display: flex; }
+
+.temp-pwd-timer { margin-top: 10px; }
+.temp-pwd-timer-bar {
+  height: 4px;
+  background: var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.temp-pwd-timer-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--clay);
+}
+.temp-pwd-timer span, #temp-pwd-timer-text {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ---------- Bandeau roulant d'informations (ticker) ---------- */
+.info-ticker {
   display: flex;
   align-items: center;
+  gap: 12px;
+  background: var(--red);
+  border: 1px solid #8f1d17;
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin: 0 -10px 20px;
+  box-shadow: 0 6px 18px -8px rgba(179, 38, 30, 0.55);
+  max-width: calc(100% + 20px);
+}
+.info-ticker-badge {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  padding: 6px 11px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.info-ticker-badge svg { width: 14px; height: 14px; }
+.info-ticker-viewport {
+  flex: 1 1 auto;
+  position: relative;
+  height: 50px;
+  overflow: hidden;
+  min-width: 0;
+}
+.info-ticker-slide {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  gap: 12px;
+}
+.info-ticker-slide.active { display: flex; }
+.info-ticker-media {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #000;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+}
+.info-ticker-media img,
+.info-ticker-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.info-ticker-text-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.info-ticker-text {
+  display: inline-block;
+  padding-left: 100%;
+  animation: ticker-scroll 15s linear infinite;
+  white-space: nowrap;
+  font-size: 14px;
+  color: #fff;
+}
+.info-ticker-text strong { color: #fff; }
+.info-ticker-text-wrap.static { overflow: hidden; }
+.info-ticker-text-static {
+  font-size: 14px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+.info-ticker-link {
+  flex: 0 0 auto;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #fff;
+  text-decoration: underline;
+}
+@media (max-width: 480px) {
+  .info-ticker-badge span, .info-ticker-badge { font-size: 11px; padding: 5px 8px; }
+  .info-ticker-link { font-size: 11.5px; }
+  .info-ticker-media { width: 38px; height: 38px; }
+  .info-ticker-viewport { height: 42px; }
+}
+
+/* ---------- Pastille de notification (nav) ---------- */
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 10px;
+  background: var(--clay);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.planteur-corbeille-nom {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* ---------- Actualites hevea ---------- */
+.news-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  background: var(--cream);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.news-item:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.news-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
+  margin-bottom: 6px;
 }
-.actu-post h3 { font-size: 16px; line-height: 1.4; }
-.actu-post h3 a {
+.news-item-source {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--forest);
+}
+.news-item-date { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.news-item h3 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
   color: var(--forest-dark);
-  text-decoration: none;
-  transition: color 0.15s ease;
+  margin: 0 0 6px;
 }
-.actu-post h3 a:hover { color: var(--forest); text-decoration: underline; }
-.actu-post .badge { font-size: 10.5px; text-transform: none; }
+.news-item-resume { font-size: 13.5px; color: var(--ink); line-height: 1.5; margin: 0 0 8px; }
+.news-item-link { font-size: 12.5px; font-weight: 600; }
+
+/* ---------- Graphique d'evolution du poids ---------- */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 320px;
+}
+@media (max-width: 640px) {
+  .chart-wrap { height: 280px; }
+}
+
+/* ---------- Tableaux -> cartes empilees sur mobile ---------- */
+/* Sous 640px, toute table dans .table-responsive se transforme en liste de
+   cartes (une par ligne), chaque cellule affichant son libelle (data-label)
+   a gauche et sa valeur a droite. Objectif : plus aucun scroll horizontal
+   ni contenu coupe sur un ecran de telephone, quel que soit le nombre de
+   colonnes du tableau d'origine. */
+@media (max-width: 640px) {
+  .table-responsive { overflow-x: visible; border: none; }
+  .table-responsive table {
+    display: block;
+    width: 100%;
+  }
+  .table-responsive thead { display: none; }
+  .table-responsive tbody { display: block; }
+  .table-responsive tr {
+    display: block;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .table-responsive tr:nth-child(even) { background: var(--paper); }
+  .table-responsive td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 13px;
+    border-bottom: 1px solid var(--line);
+    border-right: none;
+    text-align: right;
+    white-space: normal;
+    word-break: break-word;
+  }
+  .table-responsive td:last-child { border-bottom: none; }
+  .table-responsive td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    text-align: left;
+    margin-right: 10px;
+  }
+  .table-responsive td:not([data-label])::before { content: none; }
+  .table-responsive td:not([data-label]) { justify-content: flex-start; text-align: left; }
+  .table-responsive .cell-actions { justify-content: flex-end; flex-wrap: wrap; }
+  .table-responsive tfoot tr {
+    background: var(--leaf-light);
+    border-color: var(--forest);
+  }
+}
 
 /* ---------- Password field with show/hide toggle ---------- */
 .password-field { position: relative; }
@@ -516,14 +810,33 @@ form.inline { display: inline; }
   overflow: hidden;
   min-height: 320px;
 }
+.auth-panel-brand::before {
+  content: "";
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  right: -140px;
+  bottom: -160px;
+  background: radial-gradient(circle, rgba(201, 154, 62, 0.35) 0%, rgba(201, 154, 62, 0) 70%);
+  pointer-events: none;
+}
+.auth-panel-brand::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
 .auth-panel-brand .tap-motif {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.16;
+  opacity: 0.4;
   pointer-events: none;
 }
+
 .auth-panel-brand .brand-mark { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
 .auth-panel-brand .brand-mark img { height: 42px; }
 .auth-panel-brand .brand-mark span { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
@@ -598,6 +911,41 @@ form.inline { display: inline; }
 
 .muted { color: var(--muted); font-size: 13px; }
 
+/* ---------- Etats vides ---------- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 34px 20px;
+  color: var(--muted);
+}
+.empty-state .empty-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--leaf-light);
+  color: var(--forest);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.empty-state .empty-icon svg { width: 20px; height: 20px; }
+.empty-state p { margin: 0; font-size: 13.5px; }
+.empty-state p.empty-title { font-weight: 600; color: var(--forest-dark); font-size: 14.5px; margin-bottom: 3px; }
+
+.empty-state-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 0;
+  color: var(--muted);
+}
+.empty-state-inline svg { width: 16px; height: 16px; flex: 0 0 auto; opacity: 0.7; }
+
 .icon { width: 16px; height: 16px; flex: 0 0 auto; vertical-align: -3px; }
 
 /* --- Adaptation mobile --- */
@@ -639,4 +987,65 @@ body, html { overflow-x: hidden; max-width: 100vw; }
 @media (max-width: 640px) {
   .card .actions-row { flex-direction: column; }
   .card .actions-row .btn { width: 100%; text-align: center; justify-content: center; }
+}
+
+/* ==========================================================
+   Finitions "vivantes" : transitions douces, retours visuels
+   discrets. Rien d'agressif — appli de gestion financiere pour
+   une cooperative, pas une page marketing.
+   ========================================================== */
+
+/* Boutons : leger essor au survol, retour tactile au clic */
+.btn {
+  transition: filter 0.15s ease, transform 0.12s ease, box-shadow 0.2s ease;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 6px 14px -8px rgba(22, 61, 32, 0.45); }
+.btn:active { transform: translateY(1px); box-shadow: none; }
+
+/* Liens de navigation : soulignement qui glisse au survol */
+.nav-links a { position: relative; transition: background 0.15s ease, opacity 0.15s ease; }
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 3px;
+  height: 2px;
+  background: var(--clay);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+}
+.nav-links a:hover::after { transform: scaleX(1); }
+
+/* Lignes de tableau : transition douce au survol (deja surlignees) */
+tbody tr td { transition: background 0.12s ease; }
+
+/* Pastille de notification : pulsation discrete pour attirer l'oeil une fois */
+.nav-badge { animation: badge-pulse 1.8s ease-out 2; }
+@keyframes badge-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(185, 121, 63, 0.55); }
+  70% { box-shadow: 0 0 0 6px rgba(185, 121, 63, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(185, 121, 63, 0); }
+}
+
+/* Apparition en fondu des cartes/lignes au chargement de la page,
+   avec un leger decalage entre elements successifs. */
+.reveal {
+  animation: reveal-in 0.45s ease-out both;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+@keyframes reveal-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Respecte les preferences d'accessibilite : desactive les animations
+   si l'utilisateur a demande de les reduire. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .nav-badge { animation: none !important; }
+  .btn, .card, .stat, .stat .stat-icon, .nav-links a::after, tbody tr td {
+    transition: none !important;
+  }
+  .stat:hover, .card:hover, .btn:hover { transform: none !important; }
 }

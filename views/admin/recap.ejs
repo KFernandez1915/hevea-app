@@ -17,7 +17,12 @@
   <div class="card export-links">
     <strong>Exporter : </strong>
     <a class="btn small green" href="/admin/recap/export/pdf?periode=<%= periode %>">Export PDF</a>
-    <a class="btn small" href="/admin/recap/export/excel?periode=<%= periode %>">Export Excel</a>
+    <a class="btn small" href="/admin/recap/export/excel?periode=<%= periode %>">Export Excel — complet</a>
+    <a class="btn small grey" href="/admin/recap/export/excel-simplifie?periode=<%= periode %>">Export Excel — contacts &amp; paiement</a>
+    <a class="btn small grey" href="/admin/recap/export/excel-nom-poids?periode=<%= periode %>">Export Excel — nom &amp; prenom / poids</a>
+    <div class="muted mt-2">
+      <strong>Complet</strong> : toutes les colonnes (pesees, poids, montant). <strong>Contacts &amp; paiement</strong> : nom &amp; prenom, contact de paiement, moyen de paiement. <strong>Nom &amp; prenom / poids</strong> : nom &amp; prenom et poids total uniquement.
+    </div>
   </div>
 
   <div class="grid-stats">
@@ -42,23 +47,24 @@
   <div class="card">
     <div class="table-responsive">
     <table>
-      <thead><tr><th>Planteur</th><th>Contact</th><th>Nb pesees</th><th>Poids total (kg)</th><th>Montant</th></tr></thead>
+      <thead><tr><th>Planteur</th><th class="col-center">Moyen de paiement</th><th class="col-center">N° de paiement</th><th class="col-center">Nb pesees</th><th class="col-center">Poids total (kg)</th><th class="col-center">Montant</th></tr></thead>
       <tbody>
         <% lignes.forEach(function(l) { %>
           <tr>
-            <td><%= l.nom_complet %></td>
-            <td><%= l.contact || '-' %></td>
-            <td><%= l.nb_pesees %></td>
-            <td><%= l.poids_total.toFixed(1) %></td>
-            <td><%= formaterMontant(l.montant) %></td>
+            <td data-label="Planteur"><%= l.nom_complet %></td>
+            <td class="col-center" data-label="Moyen de paiement"><% if (l.moyen_paiement) { %><span class="pay-pill"><%= l.moyen_paiement %></span><% } else { %><span class="muted">-</span><% } %></td>
+            <td class="col-center" data-label="N° de paiement"><span class="pay-number"><%= l.contact_paiement || '-' %></span></td>
+            <td class="col-center" data-label="Nb pesees"><%= l.nb_pesees %></td>
+            <td class="col-center" data-label="Poids total (kg)"><%= l.poids_total.toFixed(1) %></td>
+            <td class="col-center" data-label="Montant"><%= formaterMontant(l.montant) %></td>
           </tr>
         <% }); %>
         <% if (lignes.length === 0) { %>
-          <tr><td colspan="5" class="muted">Aucune pesee pour ce mois.</td></tr>
+          <tr><td colspan="6"><div class="empty-state-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8V21H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>Aucune pesee pour ce mois.</div></td></tr>
         <% } %>
       </tbody>
       <tfoot>
-        <tr><td>TOTAL</td><td></td><td><%= totaux.nb_pesees %></td><td><%= totaux.poids_total.toFixed(1) %></td><td><%= formaterMontant(totaux.montant) %></td></tr>
+        <tr><td data-label="Planteur">TOTAL</td><td class="col-center" data-label="Moyen de paiement"></td><td class="col-center" data-label="N° de paiement"></td><td class="col-center" data-label="Nb pesees"><%= totaux.nb_pesees %></td><td class="col-center" data-label="Poids total (kg)"><%= totaux.poids_total.toFixed(1) %></td><td class="col-center" data-label="Montant"><%= formaterMontant(totaux.montant) %></td></tr>
       </tfoot>
     </table>
     </div>

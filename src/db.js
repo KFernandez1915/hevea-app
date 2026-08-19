@@ -62,22 +62,6 @@ CREATE TABLE IF NOT EXISTS informations (
   fichier_mime TEXT,
   cree_le TEXT DEFAULT (datetime('now'))
 );
-
-CREATE TABLE IF NOT EXISTS sources_rss (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  nom TEXT NOT NULL,
-  url TEXT NOT NULL,
-  actif INTEGER NOT NULL DEFAULT 1,
-  cree_le TEXT DEFAULT (datetime('now'))
-);
-
-CREATE TABLE IF NOT EXISTS actualites (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  titre TEXT NOT NULL,
-  contenu TEXT,
-  lien TEXT,
-  cree_le TEXT DEFAULT (datetime('now'))
-);
 `);
 
 // --- Migration legere : colonnes de reinitialisation de mot de passe (planteurs) ---
@@ -88,6 +72,9 @@ const migrationsReset = [
   ['reset_expire_le', "ALTER TABLE planteurs ADD COLUMN reset_expire_le TEXT"],
   ['reset_tentatives', "ALTER TABLE planteurs ADD COLUMN reset_tentatives INTEGER DEFAULT 0"],
   ['reset_demande_le', "ALTER TABLE planteurs ADD COLUMN reset_demande_le TEXT"],
+  ['mdp_temp_expire_le', "ALTER TABLE planteurs ADD COLUMN mdp_temp_expire_le TEXT"],
+  ['supprime_le', "ALTER TABLE planteurs ADD COLUMN supprime_le TEXT"],
+  ['dernier_vu_informations_le', "ALTER TABLE planteurs ADD COLUMN dernier_vu_informations_le TEXT"],
 ];
 for (const [colonne, sql] of migrationsReset) {
   if (!colonnesPlanteurs.includes(colonne)) {
@@ -99,24 +86,42 @@ for (const [colonne, sql] of migrationsReset) {
 const adminCount = db.prepare('SELECT COUNT(*) AS n FROM admins').get().n;
 if (adminCount === 0) {
   const defaultUser = process.env.ADMIN_DEFAULT_USER || 'admin';
-  const defaultPass = process.env.ADMIN_DEFAULT_PASSWORD || 'ChangerCeMotDePasse123';
+  const defaultPass = process.env.ADMIN_DEFAULT_PASSWORD || 'admin123';
   const hash = bcrypt.hashSync(defaultPass, 10);
   db.prepare('INSERT INTO admins (nom, identifiant, mot_de_passe_hash) VALUES (?, ?, ?)')
     .run('Administrateur', defaultUser, hash);
   console.log(`[hevea-app] Compte admin initial cree -> identifiant: "${defaultUser}" / mot de passe: "${defaultPass}" (a changer)`);
 }
 
-// Source RSS par defaut si aucune n'est configuree : Google Actualites filtre
-// sur hevea/caoutchouc Cote d'Ivoire & Afrique (flux reel, aucun contenu invente).
-const nbSourcesRss = db.prepare('SELECT COUNT(*) AS n FROM sources_rss').get().n;
-if (nbSourcesRss === 0) {
-  db.prepare('INSERT INTO sources_rss (nom, url) VALUES (?, ?)').run(
-    'Google Actualites — Hevea / Caoutchouc CI & Afrique',
-    'https://news.google.com/rss/search?q=' +
-      encodeURIComponent('hévéa caoutchouc Côte d\'Ivoire Afrique') +
-      '&hl=fr&gl=CI&ceid=CI:fr'
+// --- Actualites hevea : sources RSS externes + publications ecrites par l'admin ---
+db.exec(`
+CREATE TABLE IF NOT EXISTS actualites_sources (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nom TEXT NOT NULL,
+  url TEXT NOT NULL,
+  actif INTEGER NOT NULL DEFAULT 1,
+  cree_le TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS actualites_manuelles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  titre TEXT NOT NULL,
+  resume TEXT,
+  lien TEXT,
+  cree_le TEXT DEFAULT (datetime('now'))
+);
+`);
+
+// Source par defaut : Google News filtre sur l'hevea/le caoutchouc en Cote
+// d'Ivoire et en Afrique. Agrege de vraies sources (APROMAC, AIP, Agence
+// Ecofin, etc.) sans dependre d'un flux RSS proprietaire dont la stabilite
+// n'est pas garantie. L'admin peut ajouter/retirer d'autres sources ensuite.
+const nbSources = db.prepare('SELECT COUNT(*) AS n FROM actualites_sources').get().n;
+if (nbSources === 0) {
+  db.prepare('INSERT INTO actualites_sources (nom, url) VALUES (?, ?)').run(
+    'Google Actualites - Hevea Cote d\'Ivoire & Afrique',
+    'https://news.google.com/rss/search?q=h%C3%A9v%C3%A9a%20OR%20caoutchouc%20naturel%20(%22Cote%20d%27Ivoire%22%20OR%20Afrique)&hl=fr&gl=CI&ceid=CI:fr'
   );
-  console.log('[hevea-app] Source RSS par defaut inseree (Google Actualites Hevea).');
 }
 
 module.exports = db;

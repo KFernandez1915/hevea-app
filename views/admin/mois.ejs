@@ -58,7 +58,7 @@
   <div class="card">
     <h2>Pesees du mois (<%= pesees.length %>)</h2>
     <% if (pesees.length === 0) { %>
-      <p class="muted">Aucune pesee enregistree pour ce mois.</p>
+      <%- include('../partials/empty-state', { titre: 'Aucune pesee ce mois-ci', texte: 'Utilisez le formulaire ci-dessus pour enregistrer la premiere pesee.' }) %>
     <% } else { %>
       <div class="table-responsive">
       <table>
@@ -66,10 +66,10 @@
         <tbody>
           <% pesees.forEach(function(pz) { %>
             <tr>
-              <td><%= pz.nom_complet %></td>
-              <td><%= pz.date_pesee %></td>
-              <td><%= pz.poids_kg %></td>
-              <td>
+              <td data-label="Planteur"><%= pz.nom_complet %></td>
+              <td data-label="Date"><%= pz.date_pesee %></td>
+              <td data-label="Poids (kg)"><%= pz.poids_kg %></td>
+              <td data-label="Actions">
                 <form class="inline" method="POST" action="/admin/pesees/<%= pz.id %>/supprimer" onsubmit="return confirm('Supprimer cette pesee ?');">
                   <button class="btn small red" type="submit">Supprimer</button>
                 </form>

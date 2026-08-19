@@ -4,11 +4,11 @@ const path = require('path');
 const fs = require('fs');
 const db = require('../db');
 const { exigerAdmin } = require('../middleware/auth');
-const { genererMotDePasseTemporaire, genererIdentifiant, periodeCourante } = require('../utils/helpers');
+const { genererMotDePasseTemporaire, genererIdentifiant, periodeCourante, formaterPeriode } = require('../utils/helpers');
 const { envoyerIdentifiantsParSms } = require('../utils/sms');
-const { genererExcelRecap, genererPdfRecap } = require('../utils/export');
+const { genererExcelRecap, genererExcelRecapSimplifie, genererExcelRecapNomPoids, genererPdfRecap, genererExcelHistorique, genererPdfHistorique } = require('../utils/export');
 const { upload, typeDepuisMime, UPLOAD_DIR } = require('../utils/upload');
-const { obtenirArticlesRss, invaliderCacheRss, CACHE_DUREE_MS } = require('../utils/rss');
+const { recupererActualites, etatSources } = require('../utils/actualites');
 
 const router = express.Router();
 router.use(exigerAdmin);
@@ -21,6 +21,8 @@ function calculerRecap(periode) {
     SELECT p.id AS planteur_id,
            (p.nom || ' ' || p.prenoms) AS nom_complet,
            p.contact AS contact,
+           p.contact_paiement AS contact_paiement,
+           p.moyen_paiement AS moyen_paiement,
            COUNT(pz.id) AS nb_pesees,
            COALESCE(SUM(pz.poids_kg), 0) AS poids_total
     FROM planteurs p
@@ -47,9 +49,20 @@ router.get('/', (req, res) => {
   const periode = req.query.periode || periodeCourante();
   const { prixKg, lignes, totaux } = calculerRecap(periode);
   const nbPlanteursActifs = db.prepare("SELECT COUNT(*) AS n FROM planteurs WHERE statut = 'actif'").get().n;
+
+  // Toutes les pesees de tous les planteurs actifs, chronologiquement, pour
+  // tracer le graphique d'evolution du poids a chaque pesee.
+  const toutesLesPesees = db.prepare(`
+    SELECT pz.date_pesee, pz.poids_kg, (p.nom || ' ' || p.prenoms) AS nom_complet
+    FROM pesees pz
+    JOIN planteurs p ON p.id = pz.planteur_id
+    WHERE p.statut = 'actif'
+    ORDER BY pz.date_pesee ASC, pz.id ASC
+  `).all();
+
   res.render('admin/dashboard', {
     adminNom: req.session.adminNom,
-    periode, prixKg, lignes, totaux, nbPlanteursActifs,
+    periode, prixKg, lignes, totaux, nbPlanteursActifs, toutesLesPesees,
   });
 });
 
@@ -61,13 +74,14 @@ router.get('/planteurs', (req, res) => {
     const like = `%${q}%`;
     planteurs = db.prepare(`
       SELECT * FROM planteurs
-      WHERE (nom LIKE ? OR prenoms LIKE ? OR identifiant LIKE ?)
+      WHERE statut = 'actif' AND (nom LIKE ? OR prenoms LIKE ? OR identifiant LIKE ?)
       ORDER BY nom, prenoms
     `).all(like, like, like);
   } else {
-    planteurs = db.prepare('SELECT * FROM planteurs ORDER BY nom, prenoms').all();
+    planteurs = db.prepare("SELECT * FROM planteurs WHERE statut = 'actif' ORDER BY nom, prenoms").all();
   }
-  res.render('admin/planteurs', { adminNom: req.session.adminNom, planteurs, q, message: req.query.message || null });
+  const { n: nbCorbeille } = db.prepare("SELECT COUNT(*) AS n FROM planteurs WHERE statut = 'inactif'").get();
+  res.render('admin/planteurs', { adminNom: req.session.adminNom, planteurs, q, message: req.query.message || null, nbCorbeille });
 });
 
 router.get('/planteurs/nouveau', (req, res) => {
@@ -103,24 +117,48 @@ router.get('/planteurs/:id/modifier', (req, res) => {
 });
 
 router.post('/planteurs/:id', (req, res) => {
-  const { nom, prenoms, contact, contact_paiement, moyen_paiement, statut } = req.body;
+  const { nom, prenoms, contact, contact_paiement, moyen_paiement } = req.body;
   db.prepare(`
     UPDATE planteurs
-    SET nom = ?, prenoms = ?, contact = ?, contact_paiement = ?, moyen_paiement = ?, statut = ?
+    SET nom = ?, prenoms = ?, contact = ?, contact_paiement = ?, moyen_paiement = ?
     WHERE id = ?
-  `).run(nom, prenoms, contact || null, contact_paiement || null, moyen_paiement || null, statut === 'inactif' ? 'inactif' : 'actif', req.params.id);
+  `).run(nom, prenoms, contact || null, contact_paiement || null, moyen_paiement || null, req.params.id);
   res.redirect('/admin/planteurs?message=Planteur mis a jour.');
 });
 
-// Suppression logique : on desactive le planteur, l'historique des pesees est conserve
+// Suppression logique : le planteur est deplace vers la corbeille (statut
+// inactif + horodatage) et disparait de la liste principale. L'historique
+// des pesees est conserve, la reactivation reste possible depuis la corbeille.
 router.post('/planteurs/:id/supprimer', (req, res) => {
-  db.prepare("UPDATE planteurs SET statut = 'inactif' WHERE id = ?").run(req.params.id);
-  res.redirect('/admin/planteurs?message=Planteur desactive (historique conserve).');
+  db.prepare("UPDATE planteurs SET statut = 'inactif', supprime_le = ? WHERE id = ?").run(new Date().toISOString(), req.params.id);
+  res.redirect('/admin/planteurs?message=Planteur deplace vers la corbeille.');
 });
 
 router.post('/planteurs/:id/reactiver', (req, res) => {
-  db.prepare("UPDATE planteurs SET statut = 'actif' WHERE id = ?").run(req.params.id);
-  res.redirect('/admin/planteurs?message=Planteur reactive.');
+  db.prepare("UPDATE planteurs SET statut = 'actif', supprime_le = NULL WHERE id = ?").run(req.params.id);
+  res.redirect('/admin/corbeille?message=Planteur restaure.');
+});
+
+// --- Corbeille (planteurs supprimes) ---
+router.get('/corbeille', (req, res) => {
+  const planteurs = db.prepare("SELECT * FROM planteurs WHERE statut = 'inactif' ORDER BY supprime_le DESC").all();
+  res.render('admin/corbeille', { adminNom: req.session.adminNom, planteurs, message: req.query.message || null, erreur: req.query.erreur || null });
+});
+
+// Suppression definitive : uniquement possible depuis la corbeille, et
+// uniquement si le planteur n'a aucune pesee enregistree (pour ne jamais
+// perdre un historique de paiement reel). Sinon on bloque avec un message clair.
+router.post('/planteurs/:id/supprimer-definitivement', (req, res) => {
+  const planteur = db.prepare('SELECT * FROM planteurs WHERE id = ?').get(req.params.id);
+  if (!planteur || planteur.statut !== 'inactif') {
+    return res.redirect('/admin/corbeille?erreur=' + encodeURIComponent('Ce planteur doit dabord etre dans la corbeille.'));
+  }
+  const { n } = db.prepare('SELECT COUNT(*) AS n FROM pesees WHERE planteur_id = ?').get(req.params.id);
+  if (n > 0) {
+    return res.redirect('/admin/corbeille?erreur=' + encodeURIComponent('Suppression definitive impossible : ce planteur a un historique de pesees.'));
+  }
+  db.prepare('DELETE FROM planteurs WHERE id = ?').run(req.params.id);
+  res.redirect('/admin/corbeille?message=' + encodeURIComponent('Planteur supprime definitivement.'));
 });
 
 // --- Saisie mensuelle (prix + pesees) ---
@@ -184,6 +222,24 @@ router.get('/recap/export/excel', async (req, res) => {
   res.send(Buffer.from(buffer));
 });
 
+router.get('/recap/export/excel-simplifie', async (req, res) => {
+  const periode = req.query.periode || periodeCourante();
+  const { lignes } = calculerRecap(periode);
+  const buffer = await genererExcelRecapSimplifie(periode, lignes);
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="contacts-planteurs-${periode}.xlsx"`);
+  res.send(Buffer.from(buffer));
+});
+
+router.get('/recap/export/excel-nom-poids', async (req, res) => {
+  const periode = req.query.periode || periodeCourante();
+  const { prixKg, lignes } = calculerRecap(periode);
+  const buffer = await genererExcelRecapNomPoids(periode, prixKg || 0, lignes);
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="noms-poids-planteurs-${periode}.xlsx"`);
+  res.send(Buffer.from(buffer));
+});
+
 router.get('/recap/export/pdf', async (req, res) => {
   const periode = req.query.periode || periodeCourante();
   const { prixKg, lignes, totaux } = calculerRecap(periode);
@@ -194,9 +250,50 @@ router.get('/recap/export/pdf', async (req, res) => {
 });
 
 // --- Historique des mois ---
-router.get('/historique', (req, res) => {
+function construireHistorique() {
   const periodes = db.prepare('SELECT DISTINCT periode FROM pesees ORDER BY periode DESC').all().map((r) => r.periode);
-  res.render('admin/historique', { adminNom: req.session.adminNom, periodes });
+
+  const lignesHistorique = periodes.map((periode) => {
+    const { prixKg, lignes, totaux } = calculerRecap(periode);
+    return {
+      periode,
+      libellePeriode: formaterPeriode(periode),
+      prixKg,
+      nbPlanteurs: lignes.length,
+      nbPesees: totaux.nb_pesees,
+      poidsTotal: totaux.poids_total,
+      montantTotal: totaux.montant,
+    };
+  });
+
+  const totauxGeneraux = lignesHistorique.reduce((acc, l) => ({
+    nbPesees: acc.nbPesees + l.nbPesees,
+    poidsTotal: acc.poidsTotal + l.poidsTotal,
+    montantTotal: acc.montantTotal + l.montantTotal,
+  }), { nbPesees: 0, poidsTotal: 0, montantTotal: 0 });
+
+  return { periodes, lignesHistorique, totauxGeneraux };
+}
+
+router.get('/historique', (req, res) => {
+  const { periodes, lignesHistorique, totauxGeneraux } = construireHistorique();
+  res.render('admin/historique', { adminNom: req.session.adminNom, periodes, lignesHistorique, totauxGeneraux });
+});
+
+router.get('/historique/export/excel', async (req, res) => {
+  const { lignesHistorique, totauxGeneraux } = construireHistorique();
+  const buffer = await genererExcelHistorique(lignesHistorique, totauxGeneraux);
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', 'attachment; filename="historique-hevea.xlsx"');
+  res.send(Buffer.from(buffer));
+});
+
+router.get('/historique/export/pdf', async (req, res) => {
+  const { lignesHistorique, totauxGeneraux } = construireHistorique();
+  const buffer = await genererPdfHistorique(lignesHistorique, totauxGeneraux);
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="historique-hevea.pdf"');
+  res.send(buffer);
 });
 
 // --- Informations (annonces avec texte + image/video/audio) ---
@@ -249,76 +346,77 @@ router.post('/informations/:id/supprimer', (req, res) => {
   res.redirect(`/admin/informations?message=${encodeURIComponent('Information supprimee.')}`);
 });
 
-// --- Actualites Hevea (flux RSS + publications manuelles de l'admin) ---
-async function chargerActualites() {
-  const [rss, publications] = await Promise.all([
-    obtenirArticlesRss(),
-    Promise.resolve(db.prepare('SELECT * FROM actualites ORDER BY cree_le DESC').all()),
-  ]);
-  const publiees = publications.map((p) => ({
-    ...p,
-    titre: p.titre,
-    description: p.contenu || null,
-    lien: p.lien || null,
-    source: 'Association',
-    date: p.cree_le,
-    dateVal: new Date(p.cree_le.replace(' ', 'T') + 'Z').getTime() || 0,
-    origine: 'manuelle',
-  }));
-  return [...publiees, ...rss].sort((a, b) => b.dateVal - a.dateVal);
-}
-
+// --- Actualites hevea (RSS + publications manuelles) ---
 router.get('/actualites', async (req, res) => {
-  const actualites = await chargerActualites();
-  const sources = db.prepare('SELECT * FROM sources_rss ORDER BY actif DESC, nom').all();
+  let actualites = [];
+  let erreurChargement = null;
+  try {
+    actualites = await recupererActualites({ forcerRafraichissement: req.query.rafraichir === '1' });
+  } catch (err) {
+    erreurChargement = 'Impossible de recuperer les actualites pour le moment.';
+  }
+  const sources = etatSources();
   res.render('admin/actualites', {
     adminNom: req.session.adminNom,
     actualites,
     sources,
-    cacheDureeMinutes: CACHE_DUREE_MS / 60000,
+    erreurChargement,
     message: req.query.message || null,
     erreur: req.query.erreur || null,
   });
 });
 
-router.post('/actualites', (req, res) => {
-  const { titre, contenu, lien } = req.body;
-  if (!titre || !titre.trim()) {
-    return res.redirect(`/admin/actualites?erreur=${encodeURIComponent('Le titre est obligatoire.')}`);
-  }
-  db.prepare('INSERT INTO actualites (titre, contenu, lien) VALUES (?, ?, ?)')
-    .run(titre.trim(), contenu ? contenu.trim() : null, lien ? lien.trim() : null);
-  res.redirect(`/admin/actualites?message=${encodeURIComponent('Publication manuelle ajoutee.')}`);
-});
-
-router.post('/actualites/:id/supprimer', (req, res) => {
-  db.prepare('DELETE FROM actualites WHERE id = ?').run(req.params.id);
-  res.redirect(`/admin/actualites?message=${encodeURIComponent('Publication supprimee.')}`);
-});
-
 router.post('/actualites/sources', (req, res) => {
   const { nom, url } = req.body;
   if (!nom || !nom.trim() || !url || !url.trim()) {
-    return res.redirect(`/admin/actualites?erreur=${encodeURIComponent('Le nom et l\'URL de la source sont obligatoires.')}`);
+    return res.redirect('/admin/actualites?erreur=' + encodeURIComponent('Le nom et l\'URL du flux sont obligatoires.'));
   }
-  db.prepare('INSERT INTO sources_rss (nom, url) VALUES (?, ?)').run(nom.trim(), url.trim());
-  invaliderCacheRss();
-  res.redirect(`/admin/actualites?message=${encodeURIComponent('Source RSS ajoutee, flux recharge.')}`);
+  let urlValide;
+  try {
+    urlValide = new URL(url.trim());
+    if (!['http:', 'https:'].includes(urlValide.protocol)) throw new Error('protocole invalide');
+  } catch {
+    return res.redirect('/admin/actualites?erreur=' + encodeURIComponent('URL de flux invalide.'));
+  }
+  db.prepare('INSERT INTO actualites_sources (nom, url) VALUES (?, ?)').run(nom.trim(), urlValide.toString());
+  res.redirect('/admin/actualites?message=' + encodeURIComponent('Source ajoutee.'));
 });
 
 router.post('/actualites/sources/:id/toggle', (req, res) => {
-  const source = db.prepare('SELECT * FROM sources_rss WHERE id = ?').get(req.params.id);
+  const source = db.prepare('SELECT * FROM actualites_sources WHERE id = ?').get(req.params.id);
   if (source) {
-    db.prepare('UPDATE sources_rss SET actif = ? WHERE id = ?').run(source.actif ? 0 : 1, req.params.id);
-    invaliderCacheRss();
+    db.prepare('UPDATE actualites_sources SET actif = ? WHERE id = ?').run(source.actif ? 0 : 1, source.id);
   }
   res.redirect('/admin/actualites');
 });
 
 router.post('/actualites/sources/:id/supprimer', (req, res) => {
-  db.prepare('DELETE FROM sources_rss WHERE id = ?').run(req.params.id);
-  invaliderCacheRss();
-  res.redirect(`/admin/actualites?message=${encodeURIComponent('Source RSS supprimee, flux recharge.')}`);
+  db.prepare('DELETE FROM actualites_sources WHERE id = ?').run(req.params.id);
+  res.redirect('/admin/actualites?message=' + encodeURIComponent('Source supprimee.'));
+});
+
+router.post('/actualites/manuelles', (req, res) => {
+  const { titre, resume, lien } = req.body;
+  if (!titre || !titre.trim()) {
+    return res.redirect('/admin/actualites?erreur=' + encodeURIComponent('Le titre est obligatoire.'));
+  }
+  let lienValide = null;
+  if (lien && lien.trim()) {
+    try {
+      const u = new URL(lien.trim());
+      if (['http:', 'https:'].includes(u.protocol)) lienValide = u.toString();
+    } catch {
+      return res.redirect('/admin/actualites?erreur=' + encodeURIComponent('Lien invalide.'));
+    }
+  }
+  db.prepare('INSERT INTO actualites_manuelles (titre, resume, lien) VALUES (?, ?, ?)')
+    .run(titre.trim(), resume ? resume.trim() : null, lienValide);
+  res.redirect('/admin/actualites?message=' + encodeURIComponent('Actualite publiee.'));
+});
+
+router.post('/actualites/manuelles/:id/supprimer', (req, res) => {
+  db.prepare('DELETE FROM actualites_manuelles WHERE id = ?').run(req.params.id);
+  res.redirect('/admin/actualites?message=' + encodeURIComponent('Actualite supprimee.'));
 });
 
 module.exports = router;

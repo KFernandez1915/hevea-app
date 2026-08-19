@@ -50,6 +50,17 @@
     </div>
   </div>
 
+  <div class="card">
+    <h2>Evolution du poids a chaque pesee</h2>
+    <% if (toutesLesPesees.length === 0) { %>
+      <%- include('../partials/empty-state', { titre: 'Aucune pesee pour le moment', texte: 'Le graphique apparaitra des la premiere pesee enregistree.' }) %>
+    <% } else { %>
+      <div class="chart-wrap">
+        <canvas id="chartPesees"></canvas>
+      </div>
+    <% } %>
+  </div>
+
   <% if (!prixKg) { %>
     <div class="alert error">Le prix du kg n'a pas encore ete defini pour ce mois. Le recapitulatif ne peut pas etre calcule tant qu'il n'est pas renseigne.</div>
   <% } %>
@@ -57,7 +68,7 @@
   <div class="card">
     <h2>Apercu du mois</h2>
     <% if (lignes.length === 0) { %>
-      <p class="muted">Aucune pesee enregistree pour ce mois.</p>
+      <%- include('../partials/empty-state', { titre: 'Aucune pesee ce mois-ci', texte: 'Saisissez une pesee pour voir apparaitre l\'apercu du mois.' }) %>
     <% } else { %>
       <div class="table-responsive">
       <table>
@@ -65,10 +76,10 @@
         <tbody>
           <% lignes.forEach(function(l) { %>
             <tr>
-              <td><%= l.nom_complet %></td>
-              <td><%= l.nb_pesees %></td>
-              <td><%= l.poids_total.toFixed(1) %></td>
-              <td><%= formaterMontant(l.montant) %></td>
+              <td data-label="Planteur"><%= l.nom_complet %></td>
+              <td data-label="Pesees"><%= l.nb_pesees %></td>
+              <td data-label="Poids total (kg)"><%= l.poids_total.toFixed(1) %></td>
+              <td data-label="Montant"><%= formaterMontant(l.montant) %></td>
             </tr>
           <% }); %>
         </tbody>
@@ -77,5 +88,65 @@
     <% } %>
   </div>
 </div>
+
+<% if (toutesLesPesees.length > 0) { %>
+<script src="/js/vendor/chart.umd.min.js"></script>
+<script>
+  (function () {
+    var pesees = <%- JSON.stringify(toutesLesPesees) %>;
+    var palette = ['#205c2e', '#b9793f', '#2f7a3c', '#7a5230', '#4f9d4a', '#163d20', '#c99a5b', '#6c9e5c'];
+
+    // Toutes les dates distinctes, triees, servent de graduation d'axe X commune.
+    var labels = Array.from(new Set(pesees.map(function (p) { return p.date_pesee; }))).sort();
+
+    // Regroupement par planteur : une serie par planteur, alignee sur "labels"
+    // (valeur nulle les jours sans pesee, pour ne pas relier des points sans lien).
+    var parPlanteur = {};
+    pesees.forEach(function (p) {
+      if (!parPlanteur[p.nom_complet]) parPlanteur[p.nom_complet] = {};
+      parPlanteur[p.nom_complet][p.date_pesee] = p.poids_kg;
+    });
+
+    var noms = Object.keys(parPlanteur);
+    var datasets = noms.map(function (nom, i) {
+      var couleur = palette[i % palette.length];
+      return {
+        label: nom,
+        data: labels.map(function (d) { return parPlanteur[nom][d] != null ? parPlanteur[nom][d] : null; }),
+        borderColor: couleur,
+        backgroundColor: couleur,
+        spanGaps: true,
+        tension: 0.25,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        borderWidth: 2,
+      };
+    });
+
+    var labelsFormates = labels.map(function (d) {
+      var parts = d.split('-');
+      return parts.length === 3 ? (parts[2] + '/' + parts[1] + '/' + parts[0].slice(2)) : d;
+    });
+
+    new Chart(document.getElementById('chartPesees'), {
+      type: 'line',
+      data: { labels: labelsFormates, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+          tooltip: { callbacks: { label: function (ctx) { return ctx.dataset.label + ' : ' + ctx.parsed.y + ' kg'; } } },
+        },
+        scales: {
+          y: { title: { display: true, text: 'Poids (kg)' }, beginAtZero: true },
+          x: { title: { display: true, text: 'Date de pesee' } },
+        },
+      },
+    });
+  })();
+</script>
+<% } %>
 </body>
 </html>

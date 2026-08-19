@@ -1,44 +1,53 @@
-<%- include('../partials/head', { titre: 'Corbeille des planteurs' }) %>
+<%- include('../partials/head', { titre: 'Corbeille' }) %>
 <%- include('../partials/nav-admin') %>
 <div class="container">
-  <h1>Corbeille des planteurs</h1>
-  <p class="muted">Les planteurs supprimes apparaissent ici. Ils n'apparaissent plus dans la liste principale, mais leur historique de pesees est conserve tant qu'ils ne sont pas supprimes definitivement.</p>
+  <h1>Corbeille</h1>
+  <p class="muted" style="margin-bottom:20px;">Planteurs supprimes de la liste principale. Leur historique de pesees est conserve — vous pouvez les restaurer a tout moment.</p>
 
   <% if (message) { %>
     <div class="alert info"><%= message %></div>
   <% } %>
+  <% if (erreur) { %>
+    <div class="alert error"><%= erreur %></div>
+  <% } %>
 
   <div class="card">
-    <a class="btn grey" href="/admin/planteurs">&larr; Retour a la liste des planteurs</a>
-  </div>
-
-  <div class="card">
-    <table>
+    <div class="table-responsive">
+    <table class="table-cards-mobile">
       <thead>
-        <tr><th>Nom</th><th>Contact</th><th>Identifiant</th><th>Supprime le</th><th></th></tr>
+        <tr>
+          <th>Planteur</th>
+          <th>Identifiant</th>
+          <th class="col-center">Supprime le</th>
+          <th class="col-center">Actions</th>
+        </tr>
       </thead>
       <tbody>
         <% planteurs.forEach(function(p) { %>
           <tr>
-            <td><%= p.nom %> <%= p.prenoms %></td>
-            <td><%= p.contact || '-' %></td>
-            <td><%= p.identifiant %></td>
-            <td><%= p.supprime_le || '-' %></td>
-            <td>
-              <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/restaurer">
-                <button class="btn small green" type="submit">Restaurer</button>
-              </form>
-              <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/supprimer-definitivement" onsubmit="return confirm('Supprimer definitivement ce planteur ? Son historique de pesees sera egalement efface. Cette action est irreversible.');">
-                <button class="btn small red" type="submit">Supprimer definitivement</button>
-              </form>
+            <td data-label="Planteur">
+              <span class="planteur-corbeille-nom"><%= p.nom %> <%= p.prenoms %></span>
+            </td>
+            <td data-label="Identifiant"><%= p.identifiant %></td>
+            <td class="col-center" data-label="Supprime le"><%= p.supprime_le ? new Date(p.supprime_le).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '-' %></td>
+            <td class="col-center" data-label="Actions">
+              <div class="cell-actions">
+                <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/reactiver">
+                  <button class="btn small green" type="submit">Restaurer</button>
+                </form>
+                <form class="inline" method="POST" action="/admin/planteurs/<%= p.id %>/supprimer-definitivement" onsubmit="return confirm('Supprimer definitivement ce planteur ? Cette action est irreversible et n\'est possible que sil na aucune pesee enregistree.');">
+                  <button class="btn small red" type="submit">Supprimer définitivement</button>
+                </form>
+              </div>
             </td>
           </tr>
         <% }); %>
         <% if (planteurs.length === 0) { %>
-          <tr><td colspan="5" class="muted">La corbeille est vide.</td></tr>
+          <tr><td colspan="4"><div class="empty-state-inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>La corbeille est vide.</div></td></tr>
         <% } %>
       </tbody>
     </table>
+    </div>
   </div>
 </div>
 </body>

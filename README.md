@@ -32,7 +32,7 @@ si aucun n'existe. Les identifiants sont affiches dans la console et
 correspondent par defaut a :
 
 - identifiant : `admin`
-- mot de passe : `ChangerCeMotDePasse123`
+- mot de passe : `admin123`
 
 **Important : connectez-vous et changez ce mot de passe (ou modifiez
 `ADMIN_DEFAULT_USER` / `ADMIN_DEFAULT_PASSWORD` dans `.env` avant le tout

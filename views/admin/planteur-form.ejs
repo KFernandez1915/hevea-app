@@ -41,20 +41,16 @@
         </div>
       </div>
 
-      <% if (planteur) { %>
-        <div class="form-group">
-          <label>Statut</label>
-          <select name="statut">
-            <option value="actif" <%= planteur.statut === 'actif' ? 'selected' : '' %>>Actif</option>
-            <option value="inactif" <%= planteur.statut === 'inactif' ? 'selected' : '' %>>Inactif</option>
-          </select>
-        </div>
-      <% } else { %>
+      <% if (!planteur) { %>
         <p class="muted">Un identifiant et un mot de passe temporaire seront generes automatiquement et envoyes par SMS au contact renseigne.</p>
+      <% } else if (planteur.statut === 'inactif') { %>
+        <div class="alert info">Ce planteur est dans la corbeille. Utilisez la page Corbeille pour le restaurer.</div>
       <% } %>
 
-      <button class="btn green" type="submit"><%= planteur ? 'Enregistrer' : 'Creer le planteur' %></button>
-      <a class="btn grey" href="/admin/planteurs">Annuler</a>
+      <div class="actions-row mt-1.5">
+        <button class="btn green" type="submit"><%= planteur ? 'Enregistrer' : 'Creer le planteur' %></button>
+        <a class="btn grey" href="/admin/planteurs">Annuler</a>
+      </div>
     </form>
   </div>
 </div>

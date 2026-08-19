@@ -69,7 +69,7 @@ export async function getDb() {
       // Hash par défaut ou chaîne de test
       await dbInstance.run(
         'INSERT INTO admins (nom, identifiant, mot_de_passe_hash) VALUES (?, ?, ?);',
-        ['Administrateur', 'admin', 'ChangerCeMotDePasse123']
+        ['Administrateur', 'admin', 'admin123']
       );
     }
 

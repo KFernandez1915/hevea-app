@@ -1,0 +1,96 @@
+<%- include('../partials/head', { titre: 'Votre mot de passe temporaire' }) %>
+<div class="auth-shell">
+  <div class="auth-panel-brand">
+    <svg class="tap-motif" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round">
+        <path d="M40 40 Q120 90 40 140 Q-40 190 40 240 Q120 290 40 340 Q-40 390 40 440"/>
+        <path d="M160 0 Q240 60 160 120 Q80 180 160 240 Q240 300 160 360 Q80 420 160 480"/>
+        <path d="M300 20 Q380 80 300 140 Q220 200 300 260 Q380 320 300 380 Q220 440 300 500"/>
+      </g>
+      <g fill="#ffffff">
+        <circle cx="40" cy="140" r="3"/>
+        <circle cx="160" cy="120" r="3"/>
+        <circle cx="300" cy="140" r="3"/>
+      </g>
+    </svg>
+    <div class="brand-mark">
+      <img src="/Images/logo.png" alt="Logo Hevea">
+      <span>Gestion Planteurs Hevea</span>
+    </div>
+    <div class="pitch">
+      <h2>Notez-le maintenant.</h2>
+      <p>Pour des raisons de sécurité, ce mot de passe ne s'affiche qu'une seule fois et disparaît de l'écran après <%= dureeAffichageSecondes %> secondes.</p>
+    </div>
+    <div class="pitch-foot">Valable <%= dureeValiditeMinutes %> minutes pour vous connecter — un nouveau mot de passe définitif vous sera demandé immédiatement.</div>
+  </div>
+
+  <div class="auth-panel-form">
+    <div class="login-wrap" style="max-width:420px;">
+      <h1>Votre mot de passe temporaire</h1>
+      <p class="subtitle">Identifiant : <strong><%= identifiant %></strong></p>
+
+      <div class="temp-pwd-box" id="temp-pwd-box">
+        <div class="temp-pwd-value" id="temp-pwd-value"><%= motDePasseTemporaire %></div>
+        <div class="temp-pwd-hidden-overlay" id="temp-pwd-hidden-overlay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.6 21.6 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a21.6 21.6 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+          <span>Masqué pour votre sécurité</span>
+        </div>
+      </div>
+
+      <div class="temp-pwd-timer">
+        <div class="temp-pwd-timer-bar"><div class="temp-pwd-timer-fill" id="temp-pwd-timer-fill"></div></div>
+        <span id="temp-pwd-timer-text">Visible encore <%= dureeAffichageSecondes %> s</span>
+      </div>
+
+      <button class="btn grey" type="button" id="temp-pwd-copy" style="width:100%; margin-top:14px;">Copier le mot de passe</button>
+
+      <div class="alert info" style="margin-top:18px;">
+        Connectez-vous avec ce mot de passe dans les <%= dureeValiditeMinutes %> minutes. Un nouveau mot de passe définitif vous sera demandé dès la connexion.
+      </div>
+
+      <a class="btn green" href="/planteur/connexion" style="width:100%; justify-content:center; margin-top:6px;">Aller à la connexion</a>
+      <p class="muted" style="text-align:center; margin-top:16px;"><a href="/planteur/mot-de-passe-oublie">Redemander un mot de passe</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var dureeAffichage = <%= dureeAffichageSecondes %>;
+    var restant = dureeAffichage;
+    var valueEl = document.getElementById('temp-pwd-value');
+    var overlayEl = document.getElementById('temp-pwd-hidden-overlay');
+    var fillEl = document.getElementById('temp-pwd-timer-fill');
+    var textEl = document.getElementById('temp-pwd-timer-text');
+    var copyBtn = document.getElementById('temp-pwd-copy');
+    var boxEl = document.getElementById('temp-pwd-box');
+
+    fillEl.style.transition = 'width ' + dureeAffichage + 's linear';
+    requestAnimationFrame(function () { fillEl.style.width = '0%'; });
+
+    var interval = setInterval(function () {
+      restant -= 1;
+      if (restant <= 0) {
+        clearInterval(interval);
+        boxEl.classList.add('masque');
+        textEl.textContent = 'Mot de passe masqué';
+        copyBtn.disabled = true;
+        copyBtn.style.display = 'none';
+      } else {
+        textEl.textContent = 'Visible encore ' + restant + ' s';
+      }
+    }, 1000);
+
+    copyBtn.addEventListener('click', function () {
+      var texte = valueEl.textContent.trim();
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(texte).then(function () {
+          copyBtn.textContent = 'Copié !';
+          setTimeout(function () { copyBtn.textContent = 'Copier le mot de passe'; }, 1500);
+        });
+      }
+    });
+  })();
+</script>
+</body>
+</html>

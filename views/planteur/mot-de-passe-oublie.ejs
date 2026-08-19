@@ -18,16 +18,16 @@
       <span>Gestion Planteurs Hevea</span>
     </div>
     <div class="pitch">
-      <h2>On vous envoie un code pour repartir de zéro.</h2>
-      <p>Indiquez votre identifiant : un code de vérification est envoyé par SMS au numéro déjà enregistré sur votre compte.</p>
+      <h2>Un mot de passe temporaire, tout de suite à l'écran.</h2>
+      <p>Confirmez votre identifiant et le numéro de téléphone déjà enregistré sur votre compte : un mot de passe temporaire s'affiche immédiatement, à noter sans attendre.</p>
     </div>
-    <div class="pitch-foot">Le code n'est jamais envoyé à un autre numéro que celui connu de l'association.</div>
+    <div class="pitch-foot">Aucun SMS n'est envoyé : le mot de passe n'apparaît qu'ici, une seule fois.</div>
   </div>
 
   <div class="auth-panel-form">
     <div class="login-wrap">
       <h1>Mot de passe oublié</h1>
-      <p class="subtitle">Étape 1 sur 2 — Identification</p>
+      <p class="subtitle">Vérifiez votre identité pour recevoir un mot de passe temporaire</p>
       <% if (erreur) { %>
         <div class="alert error"><%= erreur %></div>
       <% } %>
@@ -36,7 +36,11 @@
           <label>Identifiant</label>
           <input type="text" name="identifiant" required autofocus placeholder="Votre identifiant de connexion">
         </div>
-        <button class="btn green" type="submit">Recevoir un code par SMS</button>
+        <div class="form-group">
+          <label>Numéro de téléphone enregistré</label>
+          <input type="tel" name="telephone" required placeholder="Ex: 07 00 00 00 00">
+        </div>
+        <button class="btn green" type="submit">Obtenir un mot de passe temporaire</button>
       </form>
       <p class="muted" style="text-align:center; margin-top:18px;"><a href="/planteur/connexion">← Retour à la connexion</a></p>
     </div>

@@ -20,7 +20,7 @@
       </div>
       <div class="form-group">
         <label>Message</label>
-        <textarea name="contenu" rows="4" placeholder="Ecrivez votre message ici..." style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:7px; font-family:var(--font-body); font-size:14px; resize:vertical;"></textarea>
+        <textarea name="contenu" rows="4" placeholder="Ecrivez votre message ici..."></textarea>
       </div>
       <div class="form-group">
         <label>Fichier joint (image, video ou audio) — optionnel</label>
@@ -36,10 +36,7 @@
   <h2 style="margin-top:28px;">Informations publiees</h2>
 
   <% if (informations.length === 0) { %>
-    <div class="card empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.5" r="0.9" fill="currentColor" stroke="none"/></svg>
-      <p>Aucune information publiee pour le moment.</p>
-    </div>
+    <div class="card"><%- include('../partials/empty-state', { titre: 'Aucune information publiee', texte: 'Les annonces publiees pour les planteurs apparaitront ici.' }) %></div>
   <% } else { %>
     <% informations.forEach(function(info) { %>
       <div class="info-post">
