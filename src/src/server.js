@@ -61,6 +61,31 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[hevea-app] Serveur demarre sur http://localhost:${PORT}`);
 });
+app.get('/test-session', (req, res) => {
+  req.session.test = 'OK';
+
+  req.session.save((err) => {
+    if (err) {
+      console.error('ERREUR SESSION:', err);
+      return res.status(500).send('Erreur session');
+    }
+
+    res.send(`
+      <h1>Test session</h1>
+      <p>Session ID : ${req.sessionID}</p>
+      <p>Valeur enregistrée : ${req.session.test}</p>
+      <a href="/test-session-verification">Vérifier la session</a>
+    `);
+  });
+});
+
+app.get('/test-session-verification', (req, res) => {
+  res.send(`
+    <h1>Vérification</h1>
+    <p>Session ID : ${req.sessionID}</p>
+    <p>Valeur : ${req.session.test || 'SESSION PERDUE'}</p>
+  `);
+});
 // Route spéciale pour garder le serveur éveillé
 app.get('/ping', (req, res) => {
   res.status(200).send('OK');
