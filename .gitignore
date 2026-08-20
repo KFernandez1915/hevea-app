@@ -1,13 +1,15 @@
 node_modules/
-# data/*.db
-# data/*.db-journal
-# data/*.db-wal
-# data/*.db-shm
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
 .env
 public/uploads/informations/*
 !public/uploads/informations/.gitkeep
 
-# Exports de base de donnees (donnees personnelles + hashs de mots de passe) :
-# ne doivent jamais etre commites.
+# Exports de base de donnees (donnees personnelles + hashs de mots de passe)
 backups/
 *.sql
+
+# Fichiers de crash/logs locaux
+hs_err_pid*.log
+replay_pid*.log

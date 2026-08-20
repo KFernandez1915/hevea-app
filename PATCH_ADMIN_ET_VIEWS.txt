@@ -1,0 +1,77 @@
+# CORRECTIONS SEMGREP — HEVEA-APP
+# Cette procédure ne modifie ni la base SQLite ni le design.
+#
+# 1) Remplacer directement :
+#    src/server.js
+#    export-data.js
+#    .gitignore
+#
+# 2) Dans views/admin/dashboard.ejs
+#    REMPLACER :
+#      var pesees = <%- JSON.stringify(toutesLesPesees).replace(/</g, '\\u003c') %>;
+#    PAR :
+#      <textarea id="pesees-data" hidden><%= JSON.stringify(toutesLesPesees) %></textarea>
+#      var pesees = JSON.parse(document.getElementById('pesees-data').value);
+#
+#    Cette méthode conserve exactement le même graphique et le même design,
+#    mais évite l'insertion JavaScript non échappée signalée par Semgrep.
+#
+# 3) Dans views/planteur/dashboard.ejs
+#    REMPLACER :
+#      var pesees = <%- JSON.stringify(mesPesees).replace(/</g, '\\u003c') %>;
+#    PAR :
+#      <textarea id="pesees-data" hidden><%= JSON.stringify(mesPesees) %></textarea>
+#      var pesees = JSON.parse(document.getElementById('pesees-data').value);
+#
+# 4) Dans src/routes/admin.js
+#    Le rapport signale des path traversal sur les suppressions de fichiers.
+#    Ajouter après router.use(exigerAdmin); :
+#
+#      function cheminUploadSecurise(nomFichier) {
+#        const racine = path.resolve(UPLOAD_DIR);
+#        const cible = path.resolve(racine, path.basename(String(nomFichier || '')));
+#        const prefixe = `${racine}${path.sep}`;
+#        return cible.startsWith(prefixe) ? cible : null;
+#      }
+#
+#    Dans /informations/:id/supprimer, remplacer le bloc de construction du
+#    chemin par :
+#
+#      const filePath = cheminUploadSecurise(info.fichier_nom);
+#      if (filePath) fs.unlink(filePath, () => {});
+#
+#    Dans le second endroit signalé (autour des lignes 342-343), appliquer
+#    exactement la même fonction avant toute lecture/écriture avec fs.
+#
+# 5) REDIRECTIONS :
+#    Les anciennes alertes de redirection proviennent en partie de l'ancien
+#    code. Les redirections actuelles visibles dans le dépôt sont internes
+#    et utilisent encodeURIComponent pour les messages. Pour les paramètres
+#    de période, ne jamais construire une URL avec une valeur arbitraire.
+#    Utiliser :
+#
+#      function periodeSecurisee(value) {
+#        const p = String(value || '');
+#        return /^\d{4}-(0[1-9]|1[0-2])$/.test(p) ? p : periodeCourante();
+#      }
+#
+#    puis remplacer les occurrences :
+#      req.query.periode || periodeCourante()
+#    par :
+#      periodeSecurisee(req.query.periode)
+#
+#    et, dans les POST, valider pareil avant de rediriger.
+#
+# 6) INITIAL-DATA / BCRYPT :
+#    Le rapport Semgrep référence public/js/initial-data.sql et
+#    src/public/js/initial-data.sql sur l'ancien commit 02bab9d.
+#    Ces fichiers ne sont pas présents sur la branche main actuelle.
+#    NE PAS régénérer ni modifier la base pour faire disparaître ces alertes.
+#    Si Semgrep les signale encore après un nouveau scan, elles correspondent
+#    à l'historique Git et non au code actuellement présent.
+#
+# 7) AndroidManifest.xml :
+#    android:exported="true" sur MainActivity est nécessaire ici car l'activité
+#    possède l'intent-filter MAIN/LAUNCHER. Ne pas le retirer : cela empêcherait
+#    le lancement normal de l'application. Le rapport est donc à traiter comme
+#    un faux positif dans ce cas précis.

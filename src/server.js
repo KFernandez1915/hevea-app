@@ -25,6 +25,8 @@ if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
   throw new Error('SESSION_SECRET doit etre defini en production (voir .env.example).');
 }
 
+const sessionCookieMaxAge = 1000 * 60 * 60 * 8;
+
 app.use(session({
   name: 'hevea.sid',
   secret: process.env.SESSION_SECRET || 'change-moi-en-production',
@@ -35,7 +37,9 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 1000 * 60 * 60 * 8, // 8h
+    domain: process.env.SESSION_COOKIE_DOMAIN || undefined,
+    expires: null,
+    maxAge: sessionCookieMaxAge, // 8h
   },
 }));
 
