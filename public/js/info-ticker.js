@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.info-ticker').forEach(function (ticker) {
-    var slides = Array.prototype.slice.call(ticker.querySelectorAll('.info-ticker-slide'));
+    var slides = Array.from(ticker.querySelectorAll('.info-ticker-slide'));
     if (slides.length === 0) return;
 
     function activate(i) {

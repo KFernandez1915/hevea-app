@@ -14,10 +14,20 @@ function csrfToken(req, res, next) {
 }
 
 function verifieToken(req) {
-  const fourni = req.body && req.body._csrf;
-  return !!fourni && !!req.session.csrfToken
-    && fourni.length === req.session.csrfToken.length
-    && crypto.timingSafeEqual(Buffer.from(fourni), Buffer.from(req.session.csrfToken));
+  // Schéma minimal explicite de la requête CSRF :
+  // le corps doit être un objet et _csrf, lorsqu'il est présent, doit être
+  // une chaîne hexadécimale de 64 caractères. La validation métier complète
+  // du body est effectuée par validateBody(schema) sur chaque route.
+  const body = req.body;
+  if (body !== undefined && (body === null || typeof body !== 'object' || Array.isArray(body))) {
+    return false;
+  }
+  const fourni = body && Object.hasOwn(body, '_csrf') ? body._csrf : undefined;
+  const attendu = req.session && req.session.csrfToken;
+  if (typeof fourni !== 'string' || typeof attendu !== 'string') return false;
+  if (fourni.length !== attendu.length || fourni.length !== 64) return false;
+  if (!/^[a-f0-9]{64}$/i.test(fourni) || !/^[a-f0-9]{64}$/i.test(attendu)) return false;
+  return crypto.timingSafeEqual(Buffer.from(fourni, 'utf8'), Buffer.from(attendu, 'utf8'));
 }
 
 // Middleware pour les routes classiques (formulaires urlencoded).

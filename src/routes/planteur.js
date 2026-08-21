@@ -4,6 +4,7 @@ const db = require('../db');
 const { exigerPlanteur } = require('../middleware/auth');
 const { periodeCourante } = require('../utils/helpers');
 const { recupererActualites } = require('../utils/actualites');
+const { validateBody } = require('../middleware/validation');
 
 const router = express.Router();
 router.use(exigerPlanteur);
@@ -89,7 +90,7 @@ router.get('/historique', (req, res) => {
   res.render('planteur/historique', { planteur, historique });
 });
 
-router.post('/mot-de-passe', (req, res) => {
+router.post('/mot-de-passe', validateBody('planteurPassword'), (req, res) => {
   const { mot_de_passe_actuel, nouveau_mot_de_passe } = req.body;
   const planteur = db.prepare('SELECT * FROM planteurs WHERE id = ?').get(req.session.planteurId);
   if (!bcrypt.compareSync(mot_de_passe_actuel || '', planteur.mot_de_passe_hash)) {

@@ -85,7 +85,7 @@
     // premieres lignes visibles pour ne pas ralentir les longues listes)
     var rows = document.querySelectorAll('tbody tr');
     if (rows.length) {
-      var visibleRows = Array.prototype.slice.call(rows, 0, 20);
+      var visibleRows = Array.from(rows).slice(0, 20);
       gsap.from(visibleRows, { opacity: 0, y: 6, duration: 0.3, ease: 'power1.out', stagger: 0.025, delay: 0.15, clearProps: 'opacity,transform' });
     }
 

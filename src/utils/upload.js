@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const crypto = require('crypto');
 
 const UPLOAD_DIR = path.join(__dirname, '..', '..', 'public', 'uploads', 'informations');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -47,7 +48,7 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
     const ext = EXTENSIONS_PAR_MIME[file.mimetype] || '';
-    const nomUnique = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    const nomUnique = `${Date.now()}-${crypto.randomBytes(16).toString('hex')}${ext}`;
     cb(null, nomUnique);
   },
 });

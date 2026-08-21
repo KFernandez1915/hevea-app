@@ -88,7 +88,7 @@ function creerTableauPdf(doc, { startX, startY, colWidths, headers, aligns }) {
     let x = startX;
     values.forEach((val, i) => {
       doc.fontSize(9)
-        .fillColor(opts.header ? '#FFFFFF' : (opts.bold ? `#${VERT_FORET}` : '#222222'))
+        .fillColor(opts.header ? '#FFFFFF' : '#222222')
         .font(opts.bold || opts.header ? 'Helvetica-Bold' : 'Helvetica')
         .text(String(val), x + 7, y + 5, { width: colWidths[i] - 12, align: (aligns && aligns[i]) || 'left' });
       x += colWidths[i];
@@ -164,14 +164,13 @@ function styliserEnteteExcel(row) {
   });
 }
 
-function styliserLigneExcel(row, idx) {
+function styliserLigneExcel(row) {
   row.height = 22;
   row.eachCell((cell) => {
+    cell.fill = undefined;
+    cell.font = { name: POLICE_INFORMATIONS_EXCEL, size: 10.5, color: { argb: 'FF222222' } };
     cell.border = BORDURE_TOUS_COTES;
     cell.alignment = { vertical: 'middle' };
-    if (idx % 2 === 1) {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: GRIS_ZEBRE_ARGB } };
-    }
   });
 }
 
@@ -212,18 +211,13 @@ async function genererExcelRecap(periode, prixKg, lignes, totaux) {
       Math.round(Number(l.poids_total || 0)),
       Math.round(Number(l.montant || 0)),
     ]);
-    styliserLigneExcel(row, idx);
+    styliserLigneExcel(row);
     row.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
     row.getCell(3).alignment = { vertical: 'middle', horizontal: 'center' };
     row.getCell(4).alignment = { vertical: 'middle', horizontal: 'center' };
     row.getCell(5).alignment = { vertical: 'middle', horizontal: 'right' };
     row.getCell(6).alignment = { vertical: 'middle', horizontal: 'right' };
     row.eachCell((cell) => appliquerPoliceInformations(cell));
-
-    const badge = badgePourMoyen(l.moyen_paiement);
-    const celluleMoyen = row.getCell(3);
-    celluleMoyen.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: badge.bg } };
-    celluleMoyen.font = { name: POLICE_INFORMATIONS_EXCEL, bold: true, size: 10.5, color: { argb: badge.fg } };
   });
 
   if (lignes.length === 0) {
@@ -233,9 +227,9 @@ async function genererExcelRecap(periode, prixKg, lignes, totaux) {
 
   const totalRow = sheet.addRow(['', 'TOTAL', '', '', Math.round(Number(totaux.poids_total || 0)), Math.round(Number(totaux.montant || 0))]);
   totalRow.eachCell((cell) => {
-    cell.font = { bold: true, color: { argb: VERT_FORET_ARGB } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: VERT_CLAIR_ARGB } };
-    cell.border = { top: { style: 'medium', color: { argb: VERT_FORET_ARGB } }, left: BORDURE_FINE, right: BORDURE_FINE, bottom: BORDURE_FINE };
+    cell.fill = undefined;
+    cell.font = { name: POLICE_INFORMATIONS_EXCEL, bold: true, size: 10.5, color: { argb: 'FF222222' } };
+    cell.border = { top: { style: 'medium', color: { argb: 'FF777777' } }, left: BORDURE_FINE, right: BORDURE_FINE, bottom: BORDURE_FINE };
   });
   totalRow.getCell(5).alignment = { horizontal: 'right' };
   totalRow.getCell(6).alignment = { horizontal: 'right' };
@@ -276,17 +270,12 @@ async function genererExcelRecapSimplifie(periode, lignes) {
 
   lignes.forEach((l, idx) => {
     const row = sheet.addRow([idx + 1, l.nom_complet, formaterContactPaiement(l.contact_paiement), l.moyen_paiement || 'Non renseigne']);
-    styliserLigneExcel(row, idx);
+    styliserLigneExcel(row);
     row.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
     row.getCell(2).alignment = { vertical: 'middle' };
     row.getCell(3).alignment = { vertical: 'middle', horizontal: 'center' };
     row.getCell(4).alignment = { vertical: 'middle', horizontal: 'center' };
     row.eachCell((cell) => appliquerPoliceInformations(cell));
-
-    const badge = badgePourMoyen(l.moyen_paiement);
-    const celluleMoyen = row.getCell(4);
-    celluleMoyen.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: badge.bg } };
-    celluleMoyen.font = { name: POLICE_INFORMATIONS_EXCEL, bold: true, size: 10.5, color: { argb: badge.fg } };
   });
 
   if (lignes.length === 0) {
@@ -327,7 +316,7 @@ async function genererExcelRecapNomPoids(periode, prixKg, lignes) {
 
   lignes.forEach((l, idx) => {
     const row = sheet.addRow([idx + 1, l.nom_complet, Math.round(Number(l.poids_total || 0))]);
-    styliserLigneExcel(row, idx);
+    styliserLigneExcel(row);
     row.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
     row.getCell(2).alignment = { vertical: 'middle' };
     row.getCell(3).alignment = { vertical: 'middle', horizontal: 'right' };
@@ -342,9 +331,9 @@ async function genererExcelRecapNomPoids(periode, prixKg, lignes) {
   const poidsTotal = lignes.reduce((total, l) => total + Number(l.poids_total || 0), 0);
   const totalRow = sheet.addRow(['', 'TOTAL', Math.round(poidsTotal)]);
   totalRow.eachCell((cell) => {
-    cell.font = { bold: true, color: { argb: VERT_FORET_ARGB } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: VERT_CLAIR_ARGB } };
-    cell.border = { top: { style: 'medium', color: { argb: VERT_FORET_ARGB } }, left: BORDURE_FINE, right: BORDURE_FINE, bottom: BORDURE_FINE };
+    cell.fill = undefined;
+    cell.font = { name: POLICE_INFORMATIONS_EXCEL, bold: true, size: 10.5, color: { argb: 'FF222222' } };
+    cell.border = { top: { style: 'medium', color: { argb: 'FF777777' } }, left: BORDURE_FINE, right: BORDURE_FINE, bottom: BORDURE_FINE };
   });
   totalRow.getCell(3).alignment = { horizontal: 'right' };
   totalRow.eachCell((cell) => appliquerPoliceInformations(cell));
@@ -389,13 +378,10 @@ function genererPdfRecap(periode, prixKg, lignes, totaux) {
         l.nb_pesees,
         l.poids_total.toFixed(1),
         formaterNombrePdf(l.montant),
-      ], idx % 2 === 1 ? { fill: `#${GRIS_ZEBRE_ARGB.slice(2)}` } : {});
+      ]);
     });
 
-    table.drawRow(['TOTAL', '', '', totaux.nb_pesees, totaux.poids_total.toFixed(1), formaterNombrePdf(totaux.montant)], {
-      bold: true,
-      fill: `#${VERT_CLAIR_ARGB.slice(2)}`,
-    });
+    table.drawRow(['TOTAL', '', '', totaux.nb_pesees, totaux.poids_total.toFixed(1), formaterNombrePdf(totaux.montant)], { bold: true });
 
     doc.end();
   });
@@ -433,19 +419,18 @@ async function genererExcelHistorique(lignesHistorique, totauxGeneraux) {
       l.montantTotal,
     ]);
     row.eachCell((cell) => {
+      cell.fill = undefined;
+      cell.font = { name: POLICE_INFORMATIONS_EXCEL, size: 10.5, color: { argb: 'FF222222' } };
       cell.border = BORDURE_TOUS_COTES;
       cell.alignment = { vertical: 'middle' };
-      if (idx % 2 === 1) {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: GRIS_ZEBRE_ARGB } };
-      }
     });
   });
 
   const totalRow = sheet.addRow(['TOTAL GENERAL', '', '', totauxGeneraux.nbPesees, totauxGeneraux.poidsTotal, totauxGeneraux.montantTotal]);
   totalRow.eachCell((cell) => {
-    cell.font = { bold: true, color: { argb: VERT_FORET_ARGB } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: VERT_CLAIR_ARGB } };
-    cell.border = { top: { style: 'medium', color: { argb: VERT_FORET_ARGB } }, left: BORDURE_FINE, right: BORDURE_FINE, bottom: BORDURE_FINE };
+    cell.fill = undefined;
+    cell.font = { name: POLICE_INFORMATIONS_EXCEL, bold: true, size: 10.5, color: { argb: 'FF222222' } };
+    cell.border = { top: { style: 'medium', color: { argb: 'FF777777' } }, left: BORDURE_FINE, right: BORDURE_FINE, bottom: BORDURE_FINE };
   });
 
   sheet.columns = [
@@ -501,13 +486,10 @@ function genererPdfHistorique(lignesHistorique, totauxGeneraux) {
         l.nbPesees,
         l.poidsTotal.toFixed(1),
         formaterNombrePdf(l.montantTotal),
-      ], idx % 2 === 1 ? { fill: `#${GRIS_ZEBRE_ARGB.slice(2)}` } : {});
+      ]);
     });
 
-    table.drawRow(['TOTAL GENERAL', '', '', totauxGeneraux.nbPesees, totauxGeneraux.poidsTotal.toFixed(1), formaterNombrePdf(totauxGeneraux.montantTotal)], {
-      bold: true,
-      fill: `#${VERT_CLAIR_ARGB.slice(2)}`,
-    });
+    table.drawRow(['TOTAL GENERAL', '', '', totauxGeneraux.nbPesees, totauxGeneraux.poidsTotal.toFixed(1), formaterNombrePdf(totauxGeneraux.montantTotal)], { bold: true });
 
     doc.moveDown(2);
     doc.fontSize(8).fillColor('#9AA39A').text(

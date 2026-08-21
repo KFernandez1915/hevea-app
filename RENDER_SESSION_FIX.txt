@@ -1,0 +1,16 @@
+CORRECTION SESSION RENDER
+
+Le probleme "Session invalide ou expiree" venait du cookie de session secure derriere le reverse proxy HTTPS de Render.
+
+Modification appliquee dans src/server.js :
+- Express utilise trust proxy en production.
+- Le cookie secure peut donc etre correctement defini et renvoye par le navigateur sur Render.
+
+A CONFIGURER DANS RENDER > Environment :
+NODE_ENV=production
+SESSION_SECRET=<une longue valeur aleatoire stable, a ne jamais changer entre les deploys>
+
+IMPORTANT :
+- Ne pas mettre SESSION_SECRET=change-moi-en-production en production.
+- Apres avoir modifie SESSION_SECRET, reconnectez-vous une fois : les anciennes sessions seront naturellement invalides.
+- Le stockage actuel des sessions est MemoryStore. Les sessions sont donc perdues lors d'un redemarrage/redeploy du serveur. Ce n'est pas une erreur : les utilisateurs devront se reconnecter apres un redemarrage.

@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { genererMotDePasseTemporaireSecurise } = require('../utils/helpers');
 const { limiterParIp } = require('../utils/rateLimit');
+const { validateBody } = require('../middleware/validation');
 
 const router = express.Router();
 
@@ -16,15 +17,22 @@ router.get('/admin/connexion', (req, res) => {
   res.render('login-admin', { erreur: null });
 });
 
-router.post('/admin/connexion', (req, res) => {
+router.post('/admin/connexion', validateBody('auth'), (req, res) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  const { bloque } = limiterParIp('admin-connexion', ip, 10, 15 * 60 * 1000);
+  if (bloque) return res.status(429).render('login-admin', { erreur: 'Trop de tentatives. Merci de réessayer plus tard.' });
   const { identifiant, mot_de_passe } = req.body;
   const admin = db.prepare('SELECT * FROM admins WHERE identifiant = ?').get(identifiant);
   if (!admin || !bcrypt.compareSync(mot_de_passe || '', admin.mot_de_passe_hash)) {
     return res.render('login-admin', { erreur: 'Identifiant ou mot de passe incorrect.' });
   }
-  req.session.adminId = admin.id;
-  req.session.adminNom = admin.nom;
-  res.redirect('/admin');
+  req.session.regenerate((err) => {
+    if (err) return res.status(500).send('Impossible de créer la session.');
+    req.session.adminId = admin.id;
+    req.session.adminNom = admin.nom;
+    req.session.csrfToken = require('crypto').randomBytes(32).toString('hex');
+    req.session.save(() => res.redirect('/admin'));
+  });
 });
 
 router.post('/admin/deconnexion', (req, res) => {
@@ -36,7 +44,7 @@ router.get('/planteur/connexion', (req, res) => {
   res.render('login-planteur', { erreur: req.query.erreur || null, message: req.query.message || null });
 });
 
-router.post('/planteur/connexion', (req, res) => {
+router.post('/planteur/connexion', validateBody('auth'), (req, res) => {
   const { identifiant, mot_de_passe } = req.body;
   const MESSAGE_COMPTE_BLOQUE = 'Votre session est inactive, veuillez contacter l\'administrateur.';
 
@@ -58,9 +66,13 @@ router.post('/planteur/connexion', (req, res) => {
       return res.render('login-planteur', { erreur: 'Ce mot de passe temporaire a expire. Merci d\'en redemander un nouveau.' });
     }
   }
-  req.session.planteurId = planteur.id;
-  req.session.planteurNom = `${planteur.nom} ${planteur.prenoms}`;
-  res.redirect('/planteur');
+  req.session.regenerate((err) => {
+    if (err) return res.status(500).send('Impossible de créer la session.');
+    req.session.planteurId = planteur.id;
+    req.session.planteurNom = `${planteur.nom} ${planteur.prenoms}`;
+    req.session.csrfToken = require('crypto').randomBytes(32).toString('hex');
+    req.session.save(() => res.redirect('/planteur'));
+  });
 });
 
 router.post('/planteur/deconnexion', (req, res) => {
@@ -81,7 +93,7 @@ router.get('/planteur/mot-de-passe-oublie', (req, res) => {
   res.render('planteur/mot-de-passe-oublie', { erreur: null });
 });
 
-router.post('/planteur/mot-de-passe-oublie', (req, res) => {
+router.post('/planteur/mot-de-passe-oublie', validateBody('passwordReset'), (req, res) => {
   const ip = req.ip || req.connection.remoteAddress;
   const { bloque } = limiterParIp('mdp-oublie', ip, 20, 15 * 60 * 1000);
   if (bloque) {

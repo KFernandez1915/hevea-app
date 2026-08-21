@@ -10,9 +10,54 @@ const { genererExcelRecap, genererExcelRecapSimplifie, genererExcelRecapNomPoids
 const { upload, typeDepuisMime, UPLOAD_DIR } = require('../utils/upload');
 const { recupererActualites, etatSources } = require('../utils/actualites');
 const { verifieToken } = require('../middleware/csrf');
+const { validateBody, validateParamsId, validateQuery, validateMultipartBody } = require('../middleware/validation');
 
 const router = express.Router();
 router.use(exigerAdmin);
+router.use(validateParamsId);
+router.use(validateQuery);
+
+// Validation explicite des données entrantes à la frontière de l'API.
+// Les routes multipart sont validées après multer, lorsque req.body est disponible.
+router.use((req, res, next) => {
+  if (req.method === 'GET' || req.is('multipart/form-data')) return next();
+
+  const pathName = req.path;
+  let schema = null;
+  if (req.method === 'POST') {
+    if (pathName === '/planteurs') schema = 'planteurCreate';
+    else if (/^\/planteurs\/\d+$/.test(pathName)) schema = 'planteurUpdate';
+    else if (/^\/planteurs\/\d+\/(supprimer|reactiver|supprimer-definitivement)$/.test(pathName)) schema = 'csrfOnly';
+    else if (pathName === '/mois/prix') schema = 'prix';
+    else if (pathName === '/mois/pesee') schema = 'pesee';
+    else if (/^\/pesees\/\d+\/supprimer$/.test(pathName)) schema = 'csrfOnly';
+    else if (/^\/informations\/\d+\/supprimer$/.test(pathName)) schema = 'csrfOnly';
+    else if (pathName === '/actualites/sources') schema = 'actualiteSource';
+    else if (/^\/actualites\/sources\/\d+\/(toggle|supprimer)$/.test(pathName)) schema = 'csrfOnly';
+    else if (pathName === '/actualites/manuelles') schema = 'actualiteManuelle';
+    else if (/^\/actualites\/manuelles\/\d+\/supprimer$/.test(pathName)) schema = 'csrfOnly';
+  }
+  if (!schema) return next();
+  return validateBody(schema)(req, res, next);
+});
+
+// Normalisation stricte des noms/prénoms : espaces propres + majuscules françaises.
+function normaliserNom(valeur) {
+  return String(valeur || '').trim().replace(/\s+/g, ' ').toLocaleUpperCase('fr-FR');
+}
+
+// Tri selon les règles de l'alphabet français, indépendant de la casse.
+function trierPlanteursFrancais(planteurs) {
+  return planteurs.sort((a, b) => {
+    const nom = String(a.nom || '').localeCompare(String(b.nom || ''), 'fr', { sensitivity: 'base', ignorePunctuation: true });
+    if (nom !== 0) return nom;
+    return String(a.prenoms || '').localeCompare(String(b.prenoms || ''), 'fr', { sensitivity: 'base', ignorePunctuation: true });
+  });
+}
+
+function nomCompletFrancais(a) {
+  return `${a.nom || ''} ${a.prenoms || ''}`.trim();
+}
 
 function calculerRecap(periode) {
   const prixRow = db.prepare('SELECT prix_kg FROM prix_mois WHERE periode = ?').get(periode);
@@ -30,11 +75,12 @@ function calculerRecap(periode) {
     JOIN pesees pz ON pz.planteur_id = p.id AND pz.periode = ?
     WHERE p.statut = 'actif'
     GROUP BY p.id
-    ORDER BY nom_complet
   `).all(periode).map((l) => ({
     ...l,
     montant: prixKg ? l.poids_total * prixKg : 0,
   }));
+
+  lignes.sort((a, b) => String(a.nom_complet || '').localeCompare(String(b.nom_complet || ''), 'fr', { sensitivity: 'base', ignorePunctuation: true }));
 
   const totaux = lignes.reduce((acc, l) => ({
     nb_pesees: acc.nb_pesees + l.nb_pesees,
@@ -69,18 +115,18 @@ router.get('/', (req, res) => {
 
 // --- Gestion des planteurs ---
 router.get('/planteurs', (req, res) => {
-  const q = (req.query.q || '').trim();
+  const q = String(req.query.q || '').trim().toLocaleUpperCase('fr-FR');
   let planteurs;
   if (q) {
     const like = `%${q}%`;
     planteurs = db.prepare(`
       SELECT * FROM planteurs
       WHERE statut = 'actif' AND (nom LIKE ? OR prenoms LIKE ? OR identifiant LIKE ?)
-      ORDER BY nom, prenoms
     `).all(like, like, like);
   } else {
-    planteurs = db.prepare("SELECT * FROM planteurs WHERE statut = 'actif' ORDER BY nom, prenoms").all();
+    planteurs = db.prepare("SELECT * FROM planteurs WHERE statut = 'actif'").all();
   }
+  trierPlanteursFrancais(planteurs);
   const { n: nbCorbeille } = db.prepare("SELECT COUNT(*) AS n FROM planteurs WHERE statut = 'inactif'").get();
   res.render('admin/planteurs', { adminNom: req.session.adminNom, planteurs, q, message: req.query.message || null, nbCorbeille });
 });
@@ -90,9 +136,11 @@ router.get('/planteurs/nouveau', (req, res) => {
 });
 
 router.post('/planteurs', async (req, res) => {
-  const { nom, prenoms, contact, contact_paiement, moyen_paiement } = req.body;
+  const { contact, contact_paiement, moyen_paiement } = req.body;
+  const nom = normaliserNom(req.body.nom);
+  const prenoms = normaliserNom(req.body.prenoms);
   if (!nom || !prenoms) {
-    return res.render('admin/planteur-form', { adminNom: req.session.adminNom, planteur: req.body, erreur: 'Nom et prenoms sont obligatoires.' });
+    return res.render('admin/planteur-form', { adminNom: req.session.adminNom, planteur: { ...req.body, nom, prenoms }, erreur: 'Nom et prenoms sont obligatoires.' });
   }
   const existants = new Set(db.prepare('SELECT identifiant FROM planteurs').all().map((r) => r.identifiant));
   const identifiant = genererIdentifiant(nom, prenoms, existants);
@@ -118,7 +166,9 @@ router.get('/planteurs/:id/modifier', (req, res) => {
 });
 
 router.post('/planteurs/:id', (req, res) => {
-  const { nom, prenoms, contact, contact_paiement, moyen_paiement } = req.body;
+  const nom = normaliserNom(req.body.nom);
+  const prenoms = normaliserNom(req.body.prenoms);
+  const { contact, contact_paiement, moyen_paiement } = req.body;
   db.prepare(`
     UPDATE planteurs
     SET nom = ?, prenoms = ?, contact = ?, contact_paiement = ?, moyen_paiement = ?
@@ -166,7 +216,7 @@ router.post('/planteurs/:id/supprimer-definitivement', (req, res) => {
 router.get('/mois', (req, res) => {
   const periode = req.query.periode || periodeCourante();
   const prixRow = db.prepare('SELECT prix_kg FROM prix_mois WHERE periode = ?').get(periode);
-  const planteurs = db.prepare("SELECT * FROM planteurs WHERE statut = 'actif' ORDER BY nom, prenoms").all();
+  const planteurs = trierPlanteursFrancais(db.prepare("SELECT * FROM planteurs WHERE statut = 'actif'").all());
   const pesees = db.prepare(`
     SELECT pz.*, (p.nom || ' ' || p.prenoms) AS nom_complet
     FROM pesees pz JOIN planteurs p ON p.id = pz.planteur_id
@@ -320,7 +370,7 @@ router.post('/informations', (req, res, next) => {
       if (req.file) fs.unlink(req.file.path, () => {});
       return res.status(403).send('Session invalide ou expiree. Veuillez recharger la page et reessayer.');
     }
-    next();
+    validateMultipartBody(req, res, next);
   });
 }, (req, res) => {
   const { titre, contenu } = req.body;

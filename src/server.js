@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const crypto = require('crypto');
 
 require('./db'); // initialise la base de donnees et le compte admin par defaut
 const { formaterMontant, formaterPeriode } = require('./utils/helpers');
@@ -13,12 +14,32 @@ const planteurRoutes = require('./routes/planteur');
 
 const app = express();
 
+// Render (comme la plupart des reverse proxies) termine HTTPS en amont
+// et transmet la requete HTTP au processus Node. Cela doit etre declare
+// a Express pour que les cookies de session `secure` fonctionnent correctement.
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '..', 'views'));
 app.locals.formaterMontant = formaterMontant;
 app.locals.formaterPeriode = formaterPeriode;
 
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+// En-têtes de sécurité sans imposer de politique CSP qui pourrait modifier le rendu
+// ou les scripts existants de l'application.
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (req.secure || process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
