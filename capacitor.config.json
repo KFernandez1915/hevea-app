@@ -1,5 +1,9 @@
 {
   "appId": "com.hevea.app",
-  "appName": "Gestion Planteurs Hevea",
-  "webDir": "public"
+  "appName": "Hévéa",
+  "webDir": "public",
+  "server": {
+    "url": "https://hevea-app.onrender.com",
+    "cleartext": false
+  }
 }
