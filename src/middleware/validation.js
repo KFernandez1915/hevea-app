@@ -260,6 +260,7 @@ function schemaByName(name) {
     case 'auth': return schemas.auth;
     case 'planteurPassword': return schemas.planteurPassword;
     case 'passwordReset': return schemas.passwordReset;
+    case 'csrfOnly': return schemas.csrfOnly;
     default: return null;
   }
 }
